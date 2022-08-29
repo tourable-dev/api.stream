@@ -16,6 +16,7 @@ type Props = {
   volume: number
   isMuted: boolean
   isHidden: boolean
+  noDisplay: boolean
 }
 
 export const RoomParticipant = {
@@ -70,7 +71,7 @@ export const RoomParticipant = {
       props: Props
       source: RoomParticipantSource
     }) => {
-      const { volume = 1, isHidden = false } = props
+      const { volume = 1, isHidden = false, noDisplay = false } = props
       const [labelSize, setLabelSize] = useState<0 | 1 | 2 | 3>(0)
       const ref = useRef<HTMLVideoElement>()
       // TODO: Transforms should not rely on external state
@@ -85,6 +86,8 @@ export const RoomParticipant = {
       // Hide video if explicitly isHidden by host or
       //  if the participant is sending no video
       const hasVideo = !props.isHidden && source?.props.videoEnabled
+      const hasSeen = props.noDisplay
+
 
       useEffect(() => {
         if (!ref.current) return
@@ -139,8 +142,9 @@ export const RoomParticipant = {
           }}
         >
           <div
+            hidden={hasSeen}
             style={{
-              background: '#222',
+              background: hasSeen ? '' : '#222',
               position: 'absolute',
               height: '100%',
               width: '100%',
@@ -152,7 +156,7 @@ export const RoomParticipant = {
               opacity: hasVideo ? '0' : '1',
             }}
           >
-            {source?.props.displayName && (
+            {!hasSeen && source?.props.displayName && (
               <div
                 style={{
                   borderRadius: '50%',
@@ -176,6 +180,7 @@ export const RoomParticipant = {
             muted={muteAudio}
             disablePictureInPicture={true}
             playsInline={true}
+            hidden={hasSeen}
             style={{
               left: '50%',
               top: '50%',
@@ -184,10 +189,10 @@ export const RoomParticipant = {
               height: '100%',
               opacity: hasVideo ? '1' : '0',
               objectFit: source?.props.type === 'screen' ? 'contain' : 'cover',
-              background: 'rgba(0,0,0,0.6)',
+              // background: 'rgba(0,0,0,0.6)',
             }}
           />
-          {source?.props.displayName && (
+          {!hasSeen && source?.props.displayName && (
             <div
               className="NameBannerContainer"
               style={{

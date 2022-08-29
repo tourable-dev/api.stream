@@ -59,6 +59,7 @@ export type ParticipantProps = {
   volume: number
   isMuted: boolean
   isHidden: boolean
+  noDisplay: boolean
 }
 
 export type HTMLVideoElementAttributes = {
@@ -1683,7 +1684,7 @@ export const commands = (_project: ScenelessProject) => {
     ) {
       if (addingCache[type].has(participantId)) return
 
-      const { isMuted = false, isHidden = false, volume = 1 } = props
+      const { isMuted = false, isHidden = false, noDisplay=false, volume = 1 } = props
       const existing = content.children.find(
         (x) =>
           x.props.sourceProps?.id === participantId &&
@@ -1715,6 +1716,7 @@ export const commands = (_project: ScenelessProject) => {
           volume,
           isMuted,
           isHidden,
+          noDisplay,
         },
         parentId: content.id,
         index,

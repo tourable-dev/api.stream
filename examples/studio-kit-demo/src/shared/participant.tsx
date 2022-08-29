@@ -275,7 +275,7 @@ const HostControls = ({
             onChange={(e) => {
               const checked = e.target.checked
               if (checked) {
-                projectCommands.addParticipant(id, { isMuted, volume }, type)
+                projectCommands.addParticipant(id, { isMuted, volume, noDisplay: true, isHidden: true }, type)
               } else {
                 projectCommands.removeParticipant(id, type)
               }
