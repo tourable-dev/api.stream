@@ -41,6 +41,7 @@ const Iframe = ({
     onLoad: onLoad || null,
     height : height || '100%',
     width : width || '100%',
+    allow : "autoplay"
   })
   let props = Object.create(null)
   for (let prop of Object.keys(defaultProps)) {

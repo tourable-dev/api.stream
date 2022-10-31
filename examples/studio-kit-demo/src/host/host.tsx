@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
 import React, { useEffect, useRef, useState } from 'react'
-import { init, Helpers } from '../../../../'
+import { init, Helpers  } from '../../../../'
 import { Participants } from '../shared/participant'
 import { ControlPanel, DeviceSelection } from '../shared/control-panel'
 import { DEFAULT_LAYOUT, getLayout, layouts } from './layout-examples'
@@ -14,6 +14,7 @@ import config from '../../config'
 import ReCAPTCHA from 'react-google-recaptcha'
 import axios from 'axios'
 import { nanoid } from 'nanoid'
+import { Banner } from '../../../../types/src/helpers/sceneless-project'
 
 const { ScenelessProject } = Helpers
 const { useStudio } = Helpers.React
@@ -143,12 +144,15 @@ const Project = () => {
   const [isLive, setIsLive] = useState(false)
   const [selectedVideo, setSelectedVideo] = useState(null)
   const [selectedImage, setSelectedImage] = useState(null)
+  const [banners, setBanners] = React.useState<Banner[]>(
+    studio.compositor.getSources('Banner'),
+  )
+
   const [projectedLoaded, setProjectedLoaded] = useState(false)
   // Get custom layout name from metadata we store
   const layout = project.props.layout
   const background = projectCommands.getBackgroundMedia()
-  const overlay = projectCommands.getImageOverlay();
-  
+  const overlay = projectCommands.getImageOverlay()
 
   const overlays = [
     {
@@ -161,7 +165,6 @@ const Project = () => {
     },
   ]
 
-
   const logos = [
     {
       id: '128',
@@ -172,7 +175,6 @@ const Project = () => {
       url: 'https://www.pngmart.com/files/12/Stream-Overlay-Transparent-PNG.png',
     },
   ]
-
 
   const videooverlays = [
     {
@@ -208,6 +210,7 @@ const Project = () => {
     })
   }, [])
 
+  React.useEffect(() => studio.compositor.useSources('Banner', setBanners), [])
   // Generate project links
   useEffect(() => {
     studio.createPreviewLink().then(setPreviewUrl)
@@ -221,6 +224,11 @@ const Project = () => {
       dragAndDrop: true,
     })
   }, [renderContainer.current])
+
+  function randomIntFromInterval(min: number, max: number) {
+    // min and max included
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
 
   if (!room) return null
 
@@ -383,7 +391,11 @@ const Project = () => {
           padding: 10,
         }}
       >
-        <Participants />
+        <Participants
+          room={room}
+          projectCommands={projectCommands}
+          studio={studio}
+        />
         <div
           className={Style.column}
           style={{ marginLeft: 14, marginBottom: 14 }}
@@ -395,19 +407,65 @@ const Project = () => {
               defaultValue={background}
               onChange={(e) => {
                 if (/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(e.target.value)) {
-        //          projectCommands.setBackgroundImage(e.target.value)
+                  //          projectCommands.setBackgroundImage(e.target.value)
                   projectCommands.setBackgroundImage2(generateId(), {
                     src: e.target.value,
                   })
                 } else {
-      //            projectCommands.setBackgroundVideo(e.target.value)
+                  //            projectCommands.setBackgroundVideo(e.target.value)
                   // projectCommands.setBackgroundVideo2(generateId(), {
                   //   src: e.target.value,
                   // })
-                  projectCommands.addCustomOverlay(generateId(),{
+                  projectCommands.addCustomOverlay(generateId(), {
                     src: e.target.value,
+                    width: '1920px',
+                    height: '1080px',
                   })
                 }
+              }}
+            />
+          </div>
+          <div className={Style.column}>
+            <label>CHat Overlay</label>
+            <input
+              type="button"
+              defaultValue={background}
+              onClick={(e) => {
+                projectCommands.addChatOverlay(generateId(), {
+                  message: JSON.parse(
+                    '[{"type":"text","text":"is now live! Streaming Mobile Legends: Bang Bang: My Stream "},{"type":"emoticon","text":"SirUwU","data":{"type":"direct","url":"https://static-cdn.jtvnw.net/emoticons/v2/301544927/default/light/2.0"}},{"type":"text","text":" Hey hey hey!!! this is going live "},{"type":"emoticon","text":"WutFace","data":{"type":"direct","url":"https://static-cdn.jtvnw.net/emoticons/v2/28087/default/light/2.0"}},{"type":"text","text":" , so lets go"}]',
+                  ),
+                  username: 'Maddygoround',
+                  metadata: {
+                    platform : "twitch",
+                    variant: 0,
+                    avatar:
+                      'https://inf2userdata0wus.blob.core.windows.net/content/62cc383fec1b480054cc2fde/resources/video/EchoBG.mp4/medium.jpg',
+                  },
+                })
+              }}
+            />
+          </div>
+          <div className={Style.column}>
+            <label>Add Banner</label>
+            <input
+              type="button"
+              defaultValue={background}
+              onClick={(e) => {
+                projectCommands.addBanner({
+                  bodyText: `hey hey hey ${Date.now()}`,
+                })
+              }}
+            />
+          </div>
+          <div className={Style.column}>
+            <label>Set Banner</label>
+            <input
+              type="button"
+              defaultValue={background}
+              onClick={(e) => {
+                const randomIndex = randomIntFromInterval(0, banners.length - 1)
+                projectCommands.setActiveBanner(banners[randomIndex].id)
               }}
             />
           </div>
@@ -444,7 +502,7 @@ const Project = () => {
                 marginTop: 12,
               }}
             >
-              <ControlPanel />
+              <ControlPanel room={room} projectCommands={projectCommands} />
             </div>
           </div>
         </div>
@@ -528,10 +586,9 @@ export const HostView = () => {
               layout,
               layoutProps: props,
             },
-            
+
             // Store our custom layout in metadata for future reference
             { layout: DEFAULT_LAYOUT },
-            
           )
         }
         const activeProject = await studio.Command.setActiveProject({
@@ -543,7 +600,6 @@ export const HostView = () => {
 
         setRoom(room)
         setProject(activeProject)
-
       })
       .catch((e) => {
         console.warn(e)

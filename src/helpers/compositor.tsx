@@ -2,7 +2,7 @@
  * Copyright (c) Infiniscene, Inc. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { swapItems } from '../logic'
 import { getProject } from '../core/data'
@@ -352,6 +352,9 @@ const Root = (props: { setStyle: (CSS: string) => void }) => {
   }, [])
 
   useEffect(() => {
+    const root = project.compositor.getRoot()
+    const { x: rootWidth } = root.props.size
+
     const updateCSS = () => {
       const {
         bannerStyle = BannerStyle.DEFAULT,
@@ -368,9 +371,10 @@ const Root = (props: { setStyle: (CSS: string) => void }) => {
       const CSS = themes[bannerStyle as BannerStyle](
         primaryColor,
         showNameBanners,
+        rootWidth / 1920,
       )
 
-      const logoCSS = themes[logoPosition as LogoPosition]()
+      const logoCSS = themes[logoPosition as LogoPosition](rootWidth / 1920)
 
       props.setStyle(`${CSS} ${logoCSS}` || '')
     }
@@ -629,6 +633,16 @@ ls-layout[layout="Presentation"][props*="\\"cover\\"\\:true"] > :first-child .Na
   transform: translateY(0%) !important;
 }
 
+[layout="Layered"] > [data-item] {
+  transform: scale(1.003) !important;
+}
+[layout="Layered"] > [data-item]:nth-child(2) {
+  transform: scale(1.0015) !important;
+}
+[layout="Layered"] > [data-item]:nth-child(1) {
+  transform: scale(1) !important;
+}
+
 .logo {
   position: absolute !important;
 }
@@ -669,41 +683,54 @@ export enum BannerStyle {
   BUBBLE = 'bubble',
 }
 
+export enum PlatformType {
+  TWITCH = 'twitch',
+  YOUTUBE = 'youtube',
+}
+
 const themes = {
-  [LogoPosition.TopLeft]: (scalar = 1280 / 1920) => {
+  [LogoPosition.TopLeft]: (scalar: number = 1280 / 1920) => {
     const scale = (px: number) => px * scalar + 'px'
     return `
       .wrapper {
+       height: ${scale(135)};
+       width: ${scale(240)};
        margin-top:${scale(40)} !important;
        margin-left:${scale(40)} !important;
        top:0;
        left:0;
     }`
   },
-  [LogoPosition.TopRight]: (scalar = 1280 / 1920) => {
+  [LogoPosition.TopRight]: (scalar: number = 1280 / 1920) => {
     const scale = (px: number) => px * scalar + 'px'
     return `
       .wrapper {
+       height: ${scale(135)};
+       width: ${scale(240)};
        margin-top:${scale(40)} !important;
        margin-right:${scale(40)} !important;
        top:0;
        right:0;
     }`
   },
-  [LogoPosition.BottomLeft]: (scalar = 1280 / 1920) => {
+  [LogoPosition.BottomLeft]: (scalar: number = 1280 / 1920) => {
     const scale = (px: number) => px * scalar + 'px'
     return `
       .wrapper {
+       height: ${scale(135)};
+       width: ${scale(240)};
        margin-bottom:${scale(40)} !important;
        margin-left:${scale(40)} !important;
        bottom:0;
        left:0;
     }`
   },
-  [LogoPosition.BottomRight]: (scalar = 1280 / 1920) => {
+  [LogoPosition.BottomRight]: (scalar: number = 1280 / 1920) => {
     const scale = (px: number) => px * scalar + 'px'
     return `
       .wrapper {
+       height: ${scale(135)};
+       width: ${scale(240)};
        margin-bottom:${scale(40)} !important;
        margin-right:${scale(40)} !important;
        bottom:0;
@@ -713,13 +740,79 @@ const themes = {
   [BannerStyle.DEFAULT]: (
     primaryColor: string = '#ABABAB',
     showNameBanners: boolean = true,
-    scalar = 1280 / 1920,
+    scalar: number = 1280 / 1920,
   ) => {
     const textColor = color(primaryColor).lightness() < 0.6 ? '#FFF' : '#000'
+    const chatBadgeBackgroundColor =
+      color(primaryColor).lightness() < 0.6 ? '#FFF' : '#000'
+    const chatBadgeTextColor =
+      color(primaryColor).lightness() < 0.6 ? '#000' : '#FFF'
     const scale = (px: number) => px * scalar + 'px'
 
     return `
-      .Banner, .NameBanner {
+      .ChatOverlay {
+        background: ${primaryColor} !important;
+        margin-bottom: ${scale(40)} !important;
+        transition: 300ms ease all;
+        left: 0;
+
+        /* Default Size 4 */
+        font-size: ${scale(44)} !important;
+        padding: ${scale(40)} ${scale(100)} !important;
+        border-radius: ${scale(20)} !important;
+      }
+      
+      .ChatOverlay-badge-icon {
+          width:${scale(32)};
+          height: ${scale(32)};
+          fill: currentcolor;
+          color: ${chatBadgeTextColor}
+      }
+
+       .ChatOverlay-badge-container {
+          background-color:${chatBadgeBackgroundColor};
+          display:flex;
+          flex-direction:row;
+          padding: ${scale(6)} ${scale(12)} ${scale(6)} ${scale(6)};
+          border-radius: ${scale(10)};
+          align-items: center;
+          border-bottom-left-radius: 0px !important;
+          position: relative;
+          border: none;
+          cursor: pointer;
+       }
+      
+       .ChatOverlay-badge-username {
+          color:${chatBadgeTextColor};
+          padding:${scale(6)};
+          font-size:${scale(18)};
+          font-weight:700;
+          text-transform: capitalize; 
+       }
+       
+       .ChatOverlay-badge-container::before {
+          content:"";
+          width:15px;
+          height:15px;
+          background-color:${chatBadgeBackgroundColor};
+          position: absolute;
+          bottom:-14px;
+          left:0;
+          clip-path:polygon(0% 0%, 100% 0%, 79% 4%, 65% 10%, 55% 17%, 44% 24%, 34% 33%, 24% 46%, 15% 61%, 9% 77%, 0 100%);
+        }
+       
+
+       .ChatOverlay-avatar {
+          height: ${scale(120)};
+          width: ${scale(120)};
+          left:0;
+          right:0;
+          top:0;
+          bottom:0;
+          border-radius:50%;
+       }
+
+      .Banner, .NameBanner, .ChatOverlay {
         background: ${primaryColor} !important;
         margin-bottom: ${scale(40)} !important;
         transition: 300ms ease all;
@@ -731,13 +824,16 @@ const themes = {
         border-top-right-radius: ${scale(20)} !important;
         border-bottom-right-radius: ${scale(20)} !important;
       }
-      .Banner-body, .NameBanner-body {
+
+      .Banner-body, .NameBanner-body, .ChatOverlay-body {
         color: ${textColor} !important;
         font-family: 'Roboto' !important;
         font-style: normal !important;
         font-weight: 700 !important;
         line-height: 120% !important;
+        font-size: ${scale(36)}
       }
+
       .NameBanner {
         transform-origin: 0 100%;
         margin: 0 !important;
@@ -789,10 +885,51 @@ const themes = {
     scalar = 1280 / 1920,
   ) => {
     const textColor = 'white'
+    const chatBadgeBackgroundColor = '#fff'
+    const chatBadgeTextColor = '#000'
+
     const scale = (px: number) => px * scalar + 'px'
 
     return `
-    .Banner, .NameBanner {
+
+      .ChatOverlay-badge-icon {
+          width:${scale(32)};
+          height: ${scale(32)};
+          fill: currentcolor;
+          color: ${chatBadgeTextColor}
+      }
+
+       .ChatOverlay-badge-container {
+          background-color:${chatBadgeBackgroundColor};
+          display:flex;
+          flex-direction:row;
+          padding: ${scale(6)} ${scale(12)} ${scale(6)} ${scale(6)};
+          align-items: center;
+          position: relative;
+          border: none;
+          cursor: pointer;
+       }
+
+       .ChatOverlay-badge-username {
+          color:${chatBadgeTextColor};
+          padding:${scale(6)};
+          font-size:${scale(18)};
+          font-weight:700;
+          text-transform: capitalize; 
+       }
+
+       .ChatOverlay-avatar {
+          height: ${scale(120)};
+          width: ${scale(120)};
+          left:0;
+          right:0;
+          top:0;
+          bottom:0;
+          border-radius:50%;
+       }
+
+
+    .Banner, .NameBanner, .ChatOverlay {
         background: ${color(primaryColor)
           .fade(color(primaryColor).alpha() * 0.7)
           .toString()} !important;
@@ -803,7 +940,8 @@ const themes = {
         font-size: ${scale(34)} !important;
         left: 0;
       }
-      .Banner:before, .NameBanner:before {
+
+      .Banner:before, .NameBanner:before, .ChatOverlay:before {
         z-index: 1;
         content: "";
         position: absolute;
@@ -815,7 +953,7 @@ const themes = {
         transition: 300ms ease all;
         opacity: ${color(primaryColor).alpha()};
       }
-      .Banner:after, .NameBanner:after {
+      .Banner:after, .NameBanner:after, .ChatOverlay:after {
         z-index: 1;
         content: "";
         position: absolute;
@@ -827,16 +965,18 @@ const themes = {
         background: ${color(primaryColor)};
         opacity: ${color(primaryColor).alpha()};
       }
-      .Banner-body, .NameBanner-body {
+      .Banner-body, .NameBanner-body, .ChatOverlay-body {
         color: ${textColor} !important;
         font-family: 'Roboto' !important;
         font-style: normal !important;
         font-weight: 700 !important;
         line-height: 120% !important;
+        font-size: ${scale(36)}
         position: relative;
         z-index: 2;
       }
       .Banner-header {
+        font-size: ${scale(90)}
         position: relative;
         z-index: 2;
       }
@@ -891,16 +1031,68 @@ const themes = {
     scalar = 1280 / 1920,
   ) => {
     const textColor = color(primaryColor).lightness() < 0.6 ? '#FFF' : '#000'
+    const chatBadgeBackgroundColor =
+      color(primaryColor).lightness() < 0.6 ? '#FFF' : '#000'
+    const chatBadgeTextColor =
+      color(primaryColor).lightness() < 0.6 ? '#000' : '#FFF'
+
     const scale = (px: number) => px * scalar + 'px'
 
     return `
-      .Banner {
+      .ChatOverlay-badge-icon {
+          width:${scale(32)};
+          height: ${scale(32)};
+          fill: currentcolor;
+          color: ${chatBadgeTextColor}
+      }
+
+
+       .ChatOverlay-badge-container {
+          background-color:${chatBadgeBackgroundColor};
+          display:flex;
+          flex-direction:row;
+          padding: ${scale(6)} ${scale(12)} ${scale(6)} ${scale(6)};
+          align-items: center;
+          z-index: 1;
+          border: none;
+          cursor: pointer;
+          top: 0;
+          margin-bottom: 2px;
+          margin-left: -${scale(30)};
+          border-radius: 30px;
+       }
+
+       .ChatOverlay-badge-username {
+          color:${chatBadgeTextColor};
+          padding:${scale(6)};
+          font-size:${scale(18)};
+          font-weight:700;
+          text-transform: capitalize; 
+       }
+
+       .ChatOverlayAvatar-container {
+          height: ${scale(120)};
+          width: ${scale(120)};
+          top: 0;
+       }
+       .ChatOverlay-avatar {
+          height: ${scale(120)};
+          width: ${scale(120)};
+          left:0;
+          right:0;
+          top:0;
+          bottom:0;
+          border-radius:50%;
+       }
+
+
+      .Banner, .ChatOverlay {
         transform: translateX(-50%);
         left: 50%;
         margin-bottom: ${scale(40)} !important;
       }
 
-      .Banner, .NameBanner {
+      .Banner, .NameBanner, .ChatOverlay {
         background: ${color(primaryColor)} !important;
         color: ${textColor} !important;
         border-radius: 500px !important;
@@ -911,13 +1103,14 @@ const themes = {
         padding: ${scale(40)} ${scale(80)} !important;
         font-size: ${scale(40)} !important;
       }
-      .Banner-body, .NameBanner-body {
+      .Banner-body, .NameBanner-body, .ChatOverlay-body {
         color: ${textColor} !important;
         text-align: center !important;
         font-family: 'Roboto' !important;
         font-style: normal !important;
         font-weight: 700 !important;
         line-height: 120% !important;
+        font-size: ${scale(36)}
       }
       .NameBanner {
         transform-origin: 0% 100%;
@@ -932,6 +1125,13 @@ const themes = {
         `
         }
       }
+
+      ls-layout[layout="Presentation"][props*="\\"cover\\"\\:true"] > :first-child .NameBanner {
+        top: 0% !important;
+        transform: translateY(0%) !important;
+        margin: ${scale(20)} ${scale(20)};
+      }
+
 
       .NameBanner[data-size="4"] {
         padding: ${scale(40)} ${scale(80)} ${scale(40)} ${scale(80)} !important;

@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
 import { webrtcManager } from './index'
-import { SpecialEvent } from './room-context'
+import { DataType, SpecialEvent } from './room-context'
 import {
   RoomEvent,
   Participant,
@@ -58,7 +58,7 @@ export const getRoom = (id: string) => {
   }
   const update = () => {
     const participants = room.participants
-
+    const guestParticipantMetadata = room.guestParticipantMetadata
     const tracks = participants.flatMap((participant: Participant) =>
       participant.getTracks().map((pub) => ({
         ...pub,
@@ -66,8 +66,24 @@ export const getRoom = (id: string) => {
       })),
     ) as FullTrack[]
 
+    
     const result = {
       participants: participants.map((x) => {
+
+        // /* Updating the metadata of the participants in the room. */
+        const existingGuestParticipantMetadata = guestParticipantMetadata.find(
+          (g) => g.participantId === x.identity,
+        )
+
+        if (existingGuestParticipantMetadata) {
+          let participantMetadataJson = JSON.parse(x.metadata)
+          participantMetadataJson = {
+            ...participantMetadataJson,
+            ...existingGuestParticipantMetadata.metadata,
+          }
+          x.metadata = JSON.stringify(participantMetadataJson)
+        }
+
         const meta = JSON.parse(x.metadata)
         return {
           id: x.identity,
@@ -129,6 +145,20 @@ export const getRoom = (id: string) => {
     RoomEvent.TrackUnmuted,
     RoomEvent.TrackStreamStateChanged,
   ]
+
+  /* Subscribing to the RoomEvent.DataReceived event.
+   * Update the room participant info when Participant metadata gets updated
+   */
+  room.subscribeToRoomEvent(
+    RoomEvent.DataReceived,
+    (payload, participant: Participant, kind: DataPacket_Kind) => {
+      const strData = decoder.decode(payload)
+      const data = JSON.parse(strData)
+      if (data.type === DataType.ParticipantMetadataUpdate) {
+        update()
+      }
+    },
+  )
 
   const unsubscribers = updateEvents.map((evt) =>
     room.subscribeToRoomEvent(evt, () => update()),
@@ -286,6 +316,19 @@ export const getRoom = (id: string) => {
     removeTrack: async (id: string) => {
       const track = latest.tracks.find((x) => x.trackSid === id)
       localParticipant.unpublishTrack(track.track as LocalTrack)
+    },
+    /* Setting the local participant metadata. */
+    setLocalParticipantMetadata: async(id, meta) => {
+      const data = JSON.stringify(meta)
+      const encoded = encoder.encode(
+        JSON.stringify({
+          metadata: meta,
+          type: DataType.ParticipantMetadataUpdate,
+          participantId: id,
+        }),
+      )
+      localParticipant.setMetadata(data)
+      return await localParticipant.publishData(encoded, DataPacket_Kind.RELIABLE)
     },
     setParticipantMetadata: (id, meta) => {
       return room.updateParticipant(id, meta)

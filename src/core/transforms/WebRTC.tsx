@@ -181,11 +181,10 @@ export const RoomParticipant = {
             disablePictureInPicture={true}
             playsInline={true}
             hidden={hasSeen}
+          <div
             style={{
-              left: '50%',
-              top: '50%',
               position: 'relative',
-              transform: 'translate3d(-50%, -50%, 0)',
+              display: 'flex',
               height: '100%',
               opacity: hasVideo ? '1' : '0',
               objectFit: source?.props.type === 'screen' ? 'contain' : 'cover',
@@ -193,6 +192,32 @@ export const RoomParticipant = {
             }}
           />
           {!hasSeen && source?.props.displayName && (
+              width: '100%',
+              ...(Boolean(source?.props?.mirrored) && {
+                transform: 'scaleX(-1)',
+              }),
+            }}
+          >
+            <video
+              ref={ref}
+              autoPlay={true}
+              muted={muteAudio}
+              disablePictureInPicture={true}
+              playsInline={true}
+              style={{
+                left: '50%',
+                top: '50%',
+                position: 'relative',
+                transform: 'translate3d(-50%, -50%, 0)',
+                height: '100%',
+                opacity: hasVideo ? '1' : '0',
+                objectFit:
+                  source?.props.type === 'screen' ? 'contain' : 'cover',
+                background: 'rgba(0,0,0,0.6)',
+              }}
+            />
+          </div>
+          {source?.props.displayName && (
             <div
               className="NameBannerContainer"
               style={{

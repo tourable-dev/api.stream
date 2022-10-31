@@ -300,6 +300,7 @@ import VideoCaptureOptions = Livekit.VideoCaptureOptions
 import VideoResolution = Livekit.VideoResolution
 import AudioCaptureOptions = Livekit.AudioCaptureOptions
 import ScreenShareCaptureOptions = Livekit.ScreenShareCaptureOptions
+import { ChatOverlayProps } from './transforms/ChatOverlay'
 
 export type { ChatObject, ConnectionQuality, TrackSource }
 
@@ -358,12 +359,17 @@ export interface Room {
    * Enables/disables the camera for the local {@link Participant}
    * @category Media
    */
-  setCameraEnabled: (enabled: boolean) => Promise<void | Livekit.LocalTrackPublication>
+  setCameraEnabled: (
+    enabled: boolean,
+  ) => Promise<void | Livekit.LocalTrackPublication>
   /**
    * Enables/disables the microphone for the local {@link Participant}
    * @category Media
    */
-  setMicrophoneEnabled: (enabled: boolean) => Promise<void | Livekit.LocalTrackPublication>
+  setMicrophoneEnabled: (
+    enabled: boolean,
+  ) => Promise<void | Livekit.LocalTrackPublication>
+
   /**
    * Remove a {@link Track}. Only works for local tracks.
    * @category Media
@@ -568,6 +574,11 @@ export interface Room {
    * Metadata to store on the participant. Opaque to the SDK.
    *  Change to a participant's metadata propagates immediately to remote connections.
    */
+  setLocalParticipantMetadata: (id: string, meta: { [prop: string]: any }) => Promise<void>
+  /**
+   * Metadata to store on the participant. Opaque to the SDK.
+   *  Change to a participant's metadata propagates immediately to remote connections.
+   */
   setParticipantMetadata: (id: string, meta: { [prop: string]: any }) => void
   /**
    * Listens to changes on the {@link Room Room's} chat history, and runs callback when changes occur. This hook is useful for displaying chat messages.
@@ -736,7 +747,7 @@ export interface Studio {
    * ----
    * **Emits {@link UserLoaded}**
    */
-  load: (accessToken: string) => Promise<User>
+  load: (accessToken: string, size?: { x: number; y: number }) => Promise<User>
   /**
    * Renders a project into the supplied HTML Element.
    */
@@ -839,3 +850,4 @@ export interface IframeProps {
   children?: React.ReactNode
   iframeRef?: React.Ref<HTMLIFrameElement>
 }
+

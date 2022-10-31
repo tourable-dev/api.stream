@@ -3,13 +3,12 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
 import ReactDOM from 'react-dom'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Compositor } from '../namespaces'
 import Iframe from './components/Iframe'
 import { Image } from './components/Image'
 import CoreContext from '../context'
 import { getProject } from '../data'
-const PADDING = 0
 
 export const Overlay = {
   name: 'LS-Overlay',
@@ -28,9 +27,41 @@ export const Overlay = {
     let source: any
 
     const IFrame = ({ source }: { source: any }) => {
-      const { src, meta } = source?.value || {}
+      const { src, meta, height, width } = source?.value || {}
       const iframeRef = React.useRef<HTMLIFrameElement>(null)
- 
+
+      useEffect(() => {
+        if (iframeRef.current) {
+          iframeRef.current.style.removeProperty('transformOrigin')
+          iframeRef.current.style.removeProperty('transform')
+          iframeRef.current.style.opacity = "0"
+        }
+      }, [src])
+
+      const resizeIframe = () => {
+        if (iframeRef.current) {
+          const project = getProject(CoreContext.state.activeProjectId)
+          const root = project.compositor.getRoot()
+          const { x: rootWidth, y: rootHeight } = root.props.size
+          let iframeWidth = iframeRef.current.clientWidth
+          let iframeHeight = iframeRef.current.clientHeight
+
+          let scale
+
+          if (iframeWidth && iframeHeight) {
+            scale = Math.min(rootWidth / iframeWidth, rootHeight / iframeHeight)
+          } else {
+            // It's possible the container will have no size defined (width/height=0)
+            scale = 1
+          }
+
+          iframeRef.current.style.willChange = `transform`
+          // @ts-ignore
+          iframeRef.current.style.transformOrigin = '0 0'
+          iframeRef.current.style.transform = `scale(${scale}) translateZ(0)`
+          iframeRef.current.style.opacity = '1'
+        }
+      }
       return (
         <React.Fragment>
           {meta?.type === 'html-overlay' && (
@@ -38,7 +69,10 @@ export const Overlay = {
               url={src}
               frameBorder={0}
               iframeRef={iframeRef}
-              styles={{ ...initialProps.style,  ...meta?.style }}
+              height={height}
+              width={width}
+              onLoad={resizeIframe}
+              styles={{ ...meta?.style, opacity: 0 }}
             />
           )}
           {meta?.type === 'image-overlay' && (
