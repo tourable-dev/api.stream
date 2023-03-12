@@ -34,11 +34,11 @@ export const RoomParticipant = {
       default: 1,
     },
   },
-  useSource(sources, props) {
+  useSource(sources: any[], props: { sourceProps: object }) {
     // TODO: Filter source.isActive to ensure we're getting the best match
-    return sources.find((x) => isMatch(x.props, props.sourceProps))
+    return sources.find((x: { props: object }) => isMatch(x.props, props.sourceProps))
   },
-  create({ onUpdate, onNewSource }, initialProps) {
+  create({ onUpdate, onNewSource }: any, initialProps: any) {
     const root = document.createElement('div')
 
     Object.assign(root.style, {
@@ -174,30 +174,7 @@ export const RoomParticipant = {
               </div>
             )}
           </div>
-          <video
-            ref={ref}
-            autoPlay={true}
-            muted={muteAudio}
-            disablePictureInPicture={true}
-            playsInline={true}
-            hidden={hasSeen}
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              height: '100%',
-              opacity: hasVideo ? '1' : '0',
-              objectFit: source?.props.type === 'screen' ? 'contain' : 'cover',
-              // background: 'rgba(0,0,0,0.6)',
-            }}
-          />
-          {!hasSeen && source?.props.displayName && (
-              width: '100%',
-              ...(Boolean(source?.props?.mirrored) && {
-                transform: 'scaleX(-1)',
-              }),
-            }}
-          >
+          <div>
             <video
               ref={ref}
               autoPlay={true}
@@ -217,7 +194,7 @@ export const RoomParticipant = {
               }}
             />
           </div>
-          {source?.props.displayName && (
+          {!hasSeen && source?.props.displayName && (
             <div
               className="NameBannerContainer"
               style={{
@@ -261,12 +238,12 @@ export const RoomParticipant = {
     const render = () =>
       ReactDOM.render(<Participant source={source} props={props} />, root)
 
-    onUpdate((_props) => {
+    onUpdate((_props: any) => {
       props = _props
       render()
     })
 
-    onNewSource((_source) => {
+    onNewSource((_source: any) => {
       source = _source
       render()
     })
