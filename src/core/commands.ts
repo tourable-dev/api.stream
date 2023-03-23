@@ -183,7 +183,7 @@ export const recreateLayout = async (payload: {
     })
 
   CoreContext.log.debug('New layout assigned to project:', { layout })
-    
+
   // Trigger event to update state
   await triggerInternal('ProjectChanged', { project: updateResponse.project })
 
@@ -205,9 +205,10 @@ export const recreateLayout = async (payload: {
     internalProject.compositor.getRoot().id,
     props,
   )
-  return toBaseProject(internalProject)
-}
 
+  /** return original project as well as internal project */
+  return { project: toBaseProject(internalProject), internalProject }
+}
 /**
  * Delete a project.
  *
@@ -616,6 +617,7 @@ export const reorderNodes = async (payload: {
 export const startBroadcast = async (payload: { projectId?: string }) => {
   const { projectId = state.activeProjectId } = payload
   const project = getProject(projectId)
+
   await CoreContext.clients.LiveApi().project.startProjectBroadcast({
     collectionId: project.videoApi.project.collectionId,
     projectId: project.videoApi.project.projectId,

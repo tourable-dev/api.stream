@@ -56,6 +56,7 @@ export type AdvancedSettings = {
   layouts?: Compositor.Layout.LayoutDeclaration[]
   transforms?: Compositor.Transform.TransformDeclaration[]
   defaultTransforms?: Compositor.Transform.DefaultTransformMap
+  useLatestRenderer?: boolean
 }
 
 let initResult: SDK.Studio
@@ -83,6 +84,7 @@ export const init = async (
     transforms = [],
     sources = [],
     defaultTransforms = {},
+    useLatestRenderer = false,
     guestToken,
   } = settings
   const client = new ApiStream({
@@ -109,15 +111,18 @@ export const init = async (
   CoreContext.logLevel = logLevel
   CoreContext.Request = await import('./requests')
   CoreContext.Command = await import('./commands')
+  CoreContext.rendererVersion = useLatestRenderer ? 'latest-v2' : CoreContext.version
 
   // Tie context to global scope for debugging purposes
   window.__StudioKit = {
     ...CoreContext,
   }
 
-  compositor.registerSource([...Object.values(Sources), ...sources])
-  compositor.registerTransform([...Object.values(Transforms), ...transforms])
-  compositor.registerLayout([...Object.values(Layouts), ...layouts])
+  if (compositor) {
+    compositor.registerSource([...Object.values(Sources), ...sources])
+    compositor.registerTransform([...Object.values(Transforms), ...transforms])
+    compositor.registerLayout([...Object.values(Layouts), ...layouts])
+  }
 
   const guestProject = await client.load(guestToken)
   let initialProject: SDK.Project
@@ -323,7 +328,7 @@ export const init = async (
           connectionId,
           layoutId,
           updateVersions = {},
-        } = layer.update.requestMetadata
+        } = layer.update?.requestMetadata || {}
         if (CoreContext.connectionId === connectionId) return
 
         const node = layerToNode(layer.update)
@@ -539,6 +544,30 @@ const load = async (
   })
 
   user = getBaseUser()
+
+  // TODO : Enable this when the migration work is fully done
+
+  // if (result.projects.length) {
+      /** Migrate Layout is exported from ./helpers/database.ts */
+  //   const { internalProject } = await migrateLayout(
+  //     result.projects[0].id,
+  //     result.projects[0]?.compositor?.getRoot(),
+  //   )
+  //   if (internalProject) {
+  //     const updatedProjects = result.projects.map((x: InternalProject) => {
+  //       if (x.id !== internalProject.id) return x
+  //       return internalProject
+  //     })
+
+  //     setAppState({
+  //       projects: updatedProjects,
+  //       user: result.user,
+  //       sources: result.sources,
+  //       activeProjectId: null,
+  //     })
+  //   }
+  // }
+
   trigger('UserLoaded', user)
   return user
 }

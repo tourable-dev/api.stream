@@ -3,30 +3,60 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
 import ReactDOM from 'react-dom'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Compositor } from '../namespaces'
 import APIKitAnimation from '../../compositor/html/html-animation'
 import { APIKitAnimationTypes } from '../../animation/core/types'
+import { getProject } from '../data'
+import CoreContext from '../context'
+
+export type LogoProps = {
+  src?: string
+  // Opaque to the SDK
+  [prop: string]: any
+}
+
+export type LogoSource = {
+  id: string
+  sourceProps: LogoProps
+  sourceType: string
+}
+
+export type Logo = {
+  id: string
+  props: LogoProps
+}
+
 
 export const Logo = {
   name: 'LS-Logo',
   sourceType: 'Logo',
-  props: {
-    id: {
-      type: String,
-      required: true,
-    },
-  },
-  useSource(sources, props) {
-    return sources.find((x) => x.props.type === props.id)
-  },
-  create({ onUpdate, onNewSource }, initialProps) {
+  create({ onUpdate }, { sourceProps }: { sourceProps: LogoProps }) {
     const root = document.createElement('div')
-    let source: any
 
-    const Logo = ({ source }: { source: any }) => {
-      const { src, meta, logoPosition } = source?.value || {}
+    const project = getProject(CoreContext.state.activeProjectId)
+    const projectRoot = project.compositor.getRoot()
+
+    /* Set the rootWidth to the width of the projectRoot. */
+    const { x: rootWidth } = projectRoot.props.size
+    const scalar = (rootWidth ?? 1280) / 1920
+    const scale = (px: number) => px * scalar + 'px'
+
+    const Logo = ({ source }: { source: LogoSource }) => {
+      const { src, meta } = source?.sourceProps || {}
       const { id } = source || {}
+      const [startAnimation, setStartAnimation] = React.useState(false)
+
+      useEffect(() => {
+        setStartAnimation(false)
+      }, [id])
+
+      const {
+        offsetX = 40,
+        offsetY = 40,
+        height = 135,
+        width = 240,
+      } = meta?.style || {}
 
       return (
         <APIKitAnimation
@@ -36,27 +66,45 @@ export const Logo = {
           exit={APIKitAnimationTypes.FADE_OUT}
           duration={400}
         >
-          {src && (
-            <div className="logo wrapper">
-              <img
-                style={{ ...initialProps?.style, ...meta?.style }}
-                src={src}
-              />
-            </div>
-          )}
+          <div
+            style={{
+              opacity: startAnimation ? 1 : 0,
+              width: '100%',
+              height: '100%',
+            }}
+            className={`logo-transition`}
+          >
+            {src && (
+              <div
+                className="logo wrapper"
+                style={{
+                  padding: `${scale(offsetY)} ${scale(offsetX)}`,
+                }}
+              >
+                <img
+                  style={{
+                    height: '100%',
+                    width: '100%',
+                    maxHeight: height ? scale(height) : 'none',
+                    maxWidth: width ? scale(width) : 'none',
+                    ...sourceProps?.meta?.style,
+                    ...meta?.style,
+                  }}
+                  src={src}
+                  onLoad={() => setStartAnimation(true)}
+                />
+              </div>
+            )}
+          </div>
         </APIKitAnimation>
       )
     }
 
-    const render = () => ReactDOM.render(<Logo source={source} />, root)
+    const render = (source: LogoSource) =>
+      ReactDOM.render(<Logo source={source} />, root)
 
-    onUpdate(() => {
-      render()
-    })
-
-    onNewSource((_source) => {
-      source = _source
-      render()
+    onUpdate((props) => {
+      render({ ...props })
     })
 
     return {

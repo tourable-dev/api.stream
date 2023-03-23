@@ -291,6 +291,8 @@ export interface Track {
    */
   participantId: string
   type: TrackSource
+
+  isExternal: boolean
 }
 
 // Import everything we need from Livekit
@@ -333,6 +335,11 @@ export interface Room {
    * @category Media
    */
   setMicrophone: (options?: AudioCaptureOptions) => Promise<Track>
+  /**
+   * Create audio {@link Track} and publish, replacing a Microphone if it already exists
+   * @category Media
+   */
+  addMicrophone: (options?: AudioCaptureOptions) => Promise<Track>
   /**
    * Create webcam/audio {@link Track Tracks} and publish.
    * @category Media
@@ -561,6 +568,7 @@ export interface Room {
      */
     cb: (participant: Participant) => void,
   ) => Disposable
+
   /**
    * @returns Array containing all current {@link Participant Participants} in the room
    */
@@ -574,7 +582,10 @@ export interface Room {
    * Metadata to store on the participant. Opaque to the SDK.
    *  Change to a participant's metadata propagates immediately to remote connections.
    */
-  setLocalParticipantMetadata: (id: string, meta: { [prop: string]: any }) => Promise<void>
+  setLocalParticipantMetadata: (
+    id: string,
+    meta: { [prop: string]: any },
+  ) => Promise<void>
   /**
    * Metadata to store on the participant. Opaque to the SDK.
    *  Change to a participant's metadata propagates immediately to remote connections.
@@ -850,4 +861,3 @@ export interface IframeProps {
   children?: React.ReactNode
   iframeRef?: React.Ref<HTMLIFrameElement>
 }
-

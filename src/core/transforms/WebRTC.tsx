@@ -3,20 +3,19 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
 import ReactDOM from 'react-dom'
-import React, { useLayoutEffect, useState } from 'react'
+import React, { useLayoutEffect, useState, useEffect, useRef } from 'react'
 import { isMatch } from 'lodash-es'
-import { useEffect, useRef } from 'react'
 import { CoreContext } from '../context'
 import { Compositor } from '../namespaces'
-import { getRoom } from '../webrtc/simple-room'
 import { RoomParticipantSource } from '../sources'
-import { getProject } from '../data'
+import { getProject, getProjectRoom } from '../data'
 
 type Props = {
   volume: number
   isMuted: boolean
   isHidden: boolean
   noDisplay: boolean
+  sink: string
 }
 
 export const RoomParticipant = {
@@ -38,9 +37,11 @@ export const RoomParticipant = {
     // TODO: Filter source.isActive to ensure we're getting the best match
     return sources.find((x: { props: object }) => isMatch(x.props, props.sourceProps))
   },
-  create({ onUpdate, onNewSource }: any, initialProps: any) {
+  create({ onUpdate, onNewSource, onRemove }, initialProps) {
     const root = document.createElement('div')
-
+    // TODO: Transforms should not rely on external state
+    const project = getProject(CoreContext.state.activeProjectId)
+    const room = getProjectRoom(CoreContext.state.activeProjectId)
     Object.assign(root.style, {
       position: 'relative',
     })
@@ -74,20 +75,20 @@ export const RoomParticipant = {
       const { volume = 1, isHidden = false, noDisplay = false } = props
       const [labelSize, setLabelSize] = useState<0 | 1 | 2 | 3>(0)
       const ref = useRef<HTMLVideoElement>()
-      // TODO: Transforms should not rely on external state
-      const project = getProject(CoreContext.state.activeProjectId)
-      const room = getRoom(CoreContext.state.activeProjectId)
-      const isSelf = source?.id === room?.participantId
+
+      /* It's checking if the participant is the local participant. */
+      const isSelf =
+        source?.id === room?.participantId ||
+        source?.props?.participantId === room?.participantId
 
       // Mute audio if explicitly isMuted by host,
       //  or the participant is our local participant
-      const muteAudio = isSelf || props.isMuted
+      const muteAudio = isSelf || props?.isMuted
 
       // Hide video if explicitly isHidden by host or
       //  if the participant is sending no video
-      const hasVideo = !props.isHidden && source?.props.videoEnabled
+      const hasVideo = !props?.isHidden && source?.props.videoEnabled
       const hasSeen = props.noDisplay
-
 
       useEffect(() => {
         if (!ref.current) return
@@ -96,34 +97,48 @@ export const RoomParticipant = {
             once: true,
           })
         })
+
         if (source?.value && source?.value !== ref.current.srcObject) {
-          ref.current.srcObject = source.value
+          ref.current.srcObject = source?.value
         } else if (!source?.value) {
           ref.current.srcObject = null
         }
       }, [ref.current, source?.value])
+
+      useEffect(() => {
+        if (!props && ref.current) {
+          ref.current.srcObject = null
+          ref.current = null
+        }
+      }, [props])
 
       useLayoutEffect(() => {
         if (!ref.current) return
 
         const calculate = () => {
           const rect = ref.current
-          setLabelSize(
-            getSize(rect.clientWidth, {
-              width: project.compositor.getRoot().props.size.x,
-              height: project.compositor.getRoot().props.size.y,
-            }),
-          )
+          if (rect) {
+            setLabelSize(
+              getSize(rect.clientWidth, {
+                width: project.compositor.getRoot().props.size.x,
+                height: project.compositor.getRoot().props.size.y,
+              }),
+            )
+          }
         }
 
         const resizeObserver = new ResizeObserver((entries) => {
           calculate()
         })
+
         calculate()
-        resizeObserver.observe(ref.current)
+        resizeObserver?.observe(ref.current)
 
         return () => {
-          resizeObserver.unobserve(ref.current)
+          if (ref.current) {
+            resizeObserver?.unobserve(ref.current)
+            ref.current.srcObject = null
+          }
         }
       }, [ref.current, project])
 
@@ -245,6 +260,11 @@ export const RoomParticipant = {
 
     onNewSource((_source: any) => {
       source = _source
+      render()
+    })
+
+    onRemove((_props) => {
+      props = _props
       render()
     })
 

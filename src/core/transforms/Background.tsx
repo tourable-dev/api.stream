@@ -11,26 +11,25 @@ import { getProject } from '../data'
 import CoreContext from '../context'
 import { trigger } from '../events'
 import { hasPermission, Permission } from '../../helpers/permission'
-import Iframe from './components/Iframe'
 
-export type OverlayProps = {
+export type BackgroundProps = {
   src?: string
   // Opaque to the SDK
   [prop: string]: any
 }
 
-export type OverlaySource = {
+export type BackgroundSource = {
   id: string
-  sourceProps: OverlayProps
+  sourceProps: BackgroundProps
   sourceType: string
 }
 
-export const Overlay = {
-  name: 'LS-Overlay',
-  sourceType: 'Overlay',
+export const Background = {
+  name: 'LS-Background',
+  sourceType: 'Background',
   create(
     { onUpdate, onRemove },
-    { sourceProps }: { sourceProps: OverlayProps },
+    { sourceProps }: { sourceProps: BackgroundProps },
   ) {
     onRemove(() => {
       clearInterval(interval)
@@ -40,68 +39,11 @@ export const Overlay = {
     const role = getProject(CoreContext.state.activeProjectId).role
     let interval: NodeJS.Timer
 
-    const IFrame = ({
-      source,
-      setStartAnimation,
-    }: {
-      source: OverlaySource
-      setStartAnimation: (value: boolean) => void
-    }) => {
-      const { src, meta, height, width } = source?.sourceProps || {}
-      const iframeRef = React.useRef<HTMLIFrameElement>(null)
-
-      useEffect(() => {
-        if (iframeRef.current) {
-          iframeRef.current.style.removeProperty('transformOrigin')
-          iframeRef.current.style.removeProperty('transform')
-        }
-      }, [src])
-
-      const resizeIframe = () => {
-        if (iframeRef.current) {
-          const project = getProject(CoreContext.state.activeProjectId)
-          const root = project.compositor.getRoot()
-          const { x: rootWidth, y: rootHeight } = root.props.size
-          let iframeWidth = iframeRef.current.clientWidth
-          let iframeHeight = iframeRef.current.clientHeight
-
-          let scale
-
-          if (iframeWidth && iframeHeight) {
-            scale = Math.min(rootWidth / iframeWidth, rootHeight / iframeHeight)
-          } else {
-            // It's possible the container will have no size defined (width/height=0)
-            scale = 1
-          }
-
-          iframeRef.current.style.willChange = `transform`
-          // @ts-ignore
-          iframeRef.current.style.transformOrigin = '0 0'
-          iframeRef.current.style.transform = `scale(${scale}) translateZ(0)`
-          setStartAnimation(true)
-        }
-      }
-      return (
-        <React.Fragment>
-          <Iframe
-            key={source.id}
-            url={src}
-            frameBorder={0}
-            iframeRef={iframeRef}
-            height={height}
-            width={width}
-            onLoad={resizeIframe}
-            styles={{ ...meta?.style }}
-          />
-        </React.Fragment>
-      )
-    }
-
     const Video = ({
       source,
       setStartAnimation,
     }: {
-      source: OverlaySource
+      source: BackgroundSource
       setStartAnimation: (value: boolean) => void
     }) => {
       const { src, type, meta, loop } = source?.sourceProps || {}
@@ -195,7 +137,10 @@ export const Overlay = {
               loop={loop}
               id={id}
               ref={handleRect}
-              style={{ ...sourceProps.meta.style, ...meta.style }}
+              style={{
+                ...sourceProps?.meta?.style,
+                ...meta.style,
+              }}
               onLoadedData={onLoadedData}
               onEnded={onEnded}
               onCanPlay={() => setStartAnimation(true)}
@@ -209,17 +154,20 @@ export const Overlay = {
       source,
       setStartAnimation,
     }: {
-      source: OverlaySource
+      source: BackgroundSource
       setStartAnimation: (value: boolean) => void
     }) => {
-      const { src, meta } = source?.sourceProps || {}
+      const { src, meta, type } = source?.sourceProps || {}
       const { id } = source || {}
 
       return (
         <React.Fragment key={id}>
           {src && (
             <img
-              style={{ ...sourceProps.meta.style, ...meta.style }}
+              style={{
+                ...sourceProps?.meta?.style,
+                ...meta?.style,
+              }}
               src={src}
               onLoad={() => setStartAnimation(true)}
             />
@@ -228,8 +176,8 @@ export const Overlay = {
       )
     }
 
-    const Overlay = ({ source }: { source: OverlaySource }) => {
-      const { type } = source?.sourceProps || {}
+    const Background = ({ source }: { source: BackgroundSource }) => {
+      const { type } = source.sourceProps
       const { id } = source || {}
       const [startAnimation, setStartAnimation] = React.useState(false)
       useEffect(() => {
@@ -239,14 +187,14 @@ export const Overlay = {
       return (
         <APIKitAnimation
           id={id}
-          type="overlay"
+          type="background"
           enter={APIKitAnimationTypes.FADE_IN}
           exit={APIKitAnimationTypes.FADE_OUT}
           duration={400}
         >
           <div
-            style={{ opacity: startAnimation ? 1 : 0, width: '100%', height: '100%' }}
-            className={`overlayContainer overlay-transition`}
+            style={{ opacity: startAnimation ? 1 : 0 }}
+            className={`backgroundContainer background-transition`}
           >
             {id && type === 'image' && (
               <Image source={source} setStartAnimation={setStartAnimation} />
@@ -254,18 +202,15 @@ export const Overlay = {
             {id && type === 'video' && (
               <Video source={source} setStartAnimation={setStartAnimation} />
             )}
-            {id && type === 'custom' && (
-              <IFrame source={source} setStartAnimation={setStartAnimation} />
-            )}
           </div>
         </APIKitAnimation>
       )
     }
 
-    const render = (source: OverlaySource) =>
+    const render = (source: BackgroundSource) =>
       ReactDOM.render(
         <>
-          <Overlay source={source} />
+          <Background source={source} />
         </>,
         root,
       )
