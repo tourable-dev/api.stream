@@ -52,7 +52,7 @@ export const Video2 = {
     },
   },
   useSource(sources, props) {
-    return sources.find((x: any) => x.props.type === props.id)
+    return sources.find((x) => x.props.type === props.id)
   },
   create({ onUpdate, onNewSource, onRemove }, initialProps) {
     onRemove(() => {
@@ -151,6 +151,7 @@ export const Video2 = {
             
             videoRef.current!.crossOrigin = "anonymous"
             videoRef.current!.hidden = true
+            videoRef.current!.muted = true
             
             var renderer = new THREE.WebGLRenderer({ alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
