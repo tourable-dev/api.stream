@@ -9,7 +9,7 @@ import APIKitAnimation from '../../compositor/html/html-animation'
 import { APIKitAnimationTypes } from '../../animation/core/types'
 import { getProject, getProjectRoom } from '../data'
 import CoreContext from '../context'
-import { InternalEventMap, trigger, triggerInternal } from '../events'
+import { InternalEventMap, trigger } from '../events'
 import { hasPermission, Permission } from '../../helpers/permission'
 import Iframe from './components/Iframe'
 
