@@ -412,7 +412,7 @@ export const Overlay = {
         { hasPermission(role, Permission.ManageGuests) && (
             <div id="360controls" style={{position: "absolute", display: "flex", flexDirection: "row", left: "12.5%", width: "75%", height: "100%", paddingBottom: "10px", backgroundColor: "transparent", pointerEvents: "auto", zIndex: 1000, alignItems: "end"}}>
               <button id="360playpause" onClick={Play} style={{display: "flex", padding: "0.5em", marginRight: "0.5em", backgroundColor: "white", color: "black", border: "none", borderRadius: "0.5em"}}>Play</button>
-              <button id="360playpause" onClick={Pause} style={{ display: "flex", padding: "0.5em", backgroundColor: "white", color: "black", border: "none", borderRadius: "0.5em"}}>Pause</button>
+              <button id="360playpause" onClick={Pause} style={{ display: "flex", padding: "0.5em", backgroundColor: "white", color: "black", border: "none", borderRadius: "0.5em"}}>Pause.</button>
               <input type="range" min="0" max="100" value={progress} style={{display: "flex", width: "100%", margin: "0 0.5em", pointerEvents: "none", padding: "0.5em"}} className="slider" id="myRange" step="0.5"/>
             </div>
           )
