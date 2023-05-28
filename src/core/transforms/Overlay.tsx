@@ -242,13 +242,13 @@ export const Overlay = {
               videoRef.current!.src = src
             }
             // END Custom 360 Video Player
-            
+
             // BEGIN Custom 360 Video Player
             videoRef.current!.crossOrigin = "anonymous"
             videoRef.current!.hidden = true
             videoRef.current!.muted = true
             videoRef.current!.style.zIndex = "-1"
-            
+
             var renderer = new THREE.WebGLRenderer({ alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -278,30 +278,30 @@ export const Overlay = {
             function onPointerDown(event: MouseEvent) {
 
               isUserInteracting = true;
-      
+
               onPointerDownPointerX = event.clientX;
               onPointerDownPointerY = event.clientY;
-      
+
               onPointerDownLon = lon;
               onPointerDownLat = lat;
-      
+
             }
-      
+
             function onPointerMove( event : MouseEvent ) {
-      
+
               if ( isUserInteracting === true ) {
-      
+
                 lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
                 lat = ( onPointerDownPointerY - event.clientY ) * 0.1 + onPointerDownLat;
-      
+
               }
-      
+
             }
-      
+
             function onPointerUp() {
-      
+
               isUserInteracting = false;
-      
+
             }
 
             function animate() {
@@ -314,15 +314,15 @@ export const Overlay = {
               lat = Math.max( - 85, Math.min( 85, lat ) );
               phi = THREE.MathUtils.degToRad( 90 - lat );
               theta = THREE.MathUtils.degToRad( lon );
-      
+
               camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
               camera.position.y = distance * Math.cos( phi );
               camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
-      
+
               camera.lookAt( 0, 0, 0 );
-      
+
               renderer.render( scene, camera );
-      
+
             }
 
             if (loop) {
@@ -346,7 +346,7 @@ export const Overlay = {
                 }
               }, 1000)
             }
-            
+
             // BEGIN Custom 360 Video Player
             return room?.onData((event, senderId) => {
               // Handle request for time sync.
@@ -357,11 +357,11 @@ export const Overlay = {
                   event.type === 'UserJoined' &&
                   hasPermission(role, Permission.ManageGuests)
                 ) {
-                  room?.sendData({type: "UpdateVideoTime", id: senderId, time: Math.floor(videoRef?.current?.currentTime) || 0})
+                  room?.sendData({type: "UpdateVideoTime", id: senderId, time: Math.floor(videoRef?.current?.currentTime) + 3 || 0})
                 } else if (event.type === 'VideoPause'
                 ) {
                   videoRef.current!.pause()
-                } else if (event.type === 'VideoPlay' 
+                } else if (event.type === 'VideoPlay'
                 ) {
                   videoRef.current!.play()
                 }
@@ -400,7 +400,7 @@ export const Overlay = {
             />
           )}
         </React.Fragment>
-        
+
         { hasPermission(role, Permission.ManageGuests) && (
             <div id="360controls" style={{position: "absolute", display: "flex", flexDirection: "row", left: "12.5%", width: "75%", height: "100%", paddingBottom: "10px", backgroundColor: "transparent", pointerEvents: "auto", zIndex: 1000, alignItems: "end"}}>
               <button id="360playpause" onClick={Play} style={{display: "flex", padding: "0.5em", marginRight: "0.5em", backgroundColor: "white", color: "black", border: "none", borderRadius: "0.5em"}}>Play</button>
