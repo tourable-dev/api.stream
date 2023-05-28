@@ -344,13 +344,14 @@ export const Overlay = {
                     id: id,
                     time: Math.floor(timePending),
                   })
+                  room?.sendData({type: "UpdateVideoTime", id: 'HOST', time: Math.floor(videoRef?.current?.currentTime) || 0})
                   trigger('VideoTimeUpdate', {
                     category: sourceType,
                     id: id,
                     time: Math.floor(timePending),
                   })
                 }
-              }, 1000)
+              }, 5000)
             }
 
             // BEGIN Custom 360 Video Player
@@ -384,8 +385,8 @@ export const Overlay = {
         if (!refId) return;
         if (videoRef.current) {
           return room?.onData((event, senderId) => {
-            if (event.type === 'UpdateVideoTime' && event.id === room?.participantId) {
-              console.log('event: UpdateVideoTime. event.time:', event.time, 'currentTime:', videoRef?.current?.currentTime)
+            console.log('event: UpdateVideoTime. event.time:', event.time, 'currentTime:', videoRef?.current?.currentTime)
+            if (event.type === 'UpdateVideoTime' && !hasPermission(role, Permission.UpdateProject)) {
               videoRef.current.currentTime = event.time
             }
           })
