@@ -347,7 +347,7 @@ export const Overlay = {
                     time: Math.floor(timePending),
                   })
                 }
-              }, 5000)
+              }, 3000)
             }
 
             // BEGIN Custom 360 Video Player
@@ -382,8 +382,8 @@ export const Overlay = {
         if (videoRef.current) {
           return room?.onData((event, senderId) => {
             console.log('event: UpdateVideoTime. event.time:', event.time, 'currentTime:', videoRef?.current?.currentTime)
-            if (event.type === 'UpdateVideoTime' && !hasPermission(role, Permission.UpdateProject) && Math.abs(videoRef.current.currentTime - event.time) > 1) {
-              console.log('UpdateVideoTime. Time sync difference is greater than 1 second')
+            if (event.type === 'UpdateVideoTime' && !hasPermission(role, Permission.UpdateProject) && Math.abs(videoRef.current.currentTime - event.time) > 1.5) {
+              console.log('UpdateVideoTime. Time sync difference is greater than 1.5 seconds')
               videoRef.current.currentTime = event.time
             }
           })
