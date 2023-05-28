@@ -339,11 +339,7 @@ export const Overlay = {
                 if (videoRef.current.duration) {
                   const timePending =
                     videoRef.current.duration - videoRef.current.currentTime
-                  console.log('trigger VideoTimeUpdate', {
-                    category: sourceType,
-                    id: id,
-                    time: Math.floor(timePending),
-                  })
+                  console.log('sendData',{type: "UpdateVideoTime", id: 'HOST', time: Math.floor(videoRef?.current?.currentTime) || 0})
                   room?.sendData({type: "UpdateVideoTime", id: 'HOST', time: Math.floor(videoRef?.current?.currentTime) || 0})
                   trigger('VideoTimeUpdate', {
                     category: sourceType,
@@ -386,7 +382,8 @@ export const Overlay = {
         if (videoRef.current) {
           return room?.onData((event, senderId) => {
             console.log('event: UpdateVideoTime. event.time:', event.time, 'currentTime:', videoRef?.current?.currentTime)
-            if (event.type === 'UpdateVideoTime' && !hasPermission(role, Permission.UpdateProject)) {
+            if (event.type === 'UpdateVideoTime' && !hasPermission(role, Permission.UpdateProject) && Math.abs(videoRef.current.currentTime - event.time) > 1) {
+              console.log('UpdateVideoTime. Time sync difference is greater than 1 second')
               videoRef.current.currentTime = event.time
             }
           })
