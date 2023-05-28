@@ -115,6 +115,7 @@ export const Overlay = {
           setStartAnimation(true)
         }
       }
+
       return (
         <React.Fragment>
           <Iframe
@@ -338,6 +339,11 @@ export const Overlay = {
                 if (videoRef.current.duration) {
                   const timePending =
                     videoRef.current.duration - videoRef.current.currentTime
+                  console.log('trigger VideoTimeUpdate', {
+                    category: sourceType,
+                    id: id,
+                    time: Math.floor(timePending),
+                  })
                   trigger('VideoTimeUpdate', {
                     category: sourceType,
                     id: id,
@@ -357,7 +363,8 @@ export const Overlay = {
                   event.type === 'UserJoined' &&
                   hasPermission(role, Permission.ManageGuests)
                 ) {
-                  room?.sendData({type: "UpdateVideoTime", id: senderId, time: Math.floor(videoRef?.current?.currentTime) + 3 || 0})
+                  console.log('event: UserJoined', videoRef?.current?.currentTime)
+                  room?.sendData({type: "UpdateVideoTime", id: senderId, time: Math.floor(videoRef?.current?.currentTime) || 0})
                 } else if (event.type === 'VideoPause'
                 ) {
                   videoRef.current!.pause()
@@ -378,6 +385,7 @@ export const Overlay = {
         if (videoRef.current) {
           return room?.onData((event, senderId) => {
             if (event.type === 'UpdateVideoTime' && event.id === room?.participantId) {
+              console.log('event: UpdateVideoTime. event.time:', event.time, 'currentTime:', videoRef?.current?.currentTime)
               videoRef.current.currentTime = event.time
             }
           })
