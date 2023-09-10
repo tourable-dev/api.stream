@@ -11,7 +11,7 @@ const { Room } = Helpers
 const { useStudio } = Helpers.React
 
 
-export const Participants = ({room , projectCommands ,studio} : {room:SDK.Room ,projectCommands:Helpers.ScenelessProject.Commands ,studio:any}) => {
+export const Participants = ({ room, projectCommands, studio }: { room: SDK.Room, projectCommands: Helpers.ScenelessProject.Commands, studio: any }) => {
 
   const { isHost } = useContext(AppContext)
   const { project } = useStudio()
@@ -185,7 +185,7 @@ export const ParticipantScreenshare = ({
   )
 }
 
-export const Participant = ({ participant , room , projectCommands}: ParticipantProps) => {
+export const Participant = ({ participant, room, projectCommands }: ParticipantProps) => {
   const [tracks, setTracks] = useState([])
   const screenshare = tracks.find((x) => x.type === 'screen_share')
   const webcam = tracks.find((x) => x.type === 'camera')
@@ -243,7 +243,7 @@ const HostControls = ({
   useEffect(() => {
     return projectCommands?.useParticipantState(
       id,
-      (x:any) => {
+      (x: any) => {
         setOnStream(Boolean(x))
       },
       type,
@@ -254,7 +254,7 @@ const HostControls = ({
   //  participant/type is active
   useEffect(
     () =>
-      projectCommands?.useShowcase((showcase:any) => {
+      projectCommands?.useShowcase((showcase: any) => {
         setIsShowcase(showcase.participantId === id && showcase.type === type)
       }),
 
@@ -292,7 +292,7 @@ const HostControls = ({
                 if (project.sources.some((source) => source.id === id)) {
                   projectCommands?.addRTMPSource(id, {})
                 } else {
-                  projectCommands?.addParticipant(id, { isMuted, volume }, type)
+                  projectCommands?.addParticipant(id, { isMuted, volume, noDisplay: true, isHidden: true }, type)
                 }
               } else {
                 if (project.sources.some((source) => source.id === id)) {
@@ -306,7 +306,7 @@ const HostControls = ({
           />
           On stream
         </label>
-         <label>
+        <label>
           <input
             type="checkbox"
             checked={onStream}
@@ -314,9 +314,9 @@ const HostControls = ({
             onChange={(e) => {
               const checked = e.target.checked
               if (checked) {
-                 room.setLocalParticipantMetadata(room?.participantId , { ...participant.meta , isMirrored: true })
+                room.setLocalParticipantMetadata(room?.participantId, { ...participant.meta, isMirrored: true })
               } else {
-                room.setLocalParticipantMetadata(room?.participantId , { ...participant.meta , isMirrored: false })
+                room.setLocalParticipantMetadata(room?.participantId, { ...participant.meta, isMirrored: false })
               }
               setOnStream(checked)
             }}

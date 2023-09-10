@@ -14,6 +14,7 @@ type Props = {
   volume: number
   isMuted: boolean
   isHidden: boolean
+  noDisplay: boolean
   sink: string
 }
 
@@ -32,9 +33,9 @@ export const RoomParticipant = {
       default: 1,
     },
   },
-  useSource(sources, props) {
+  useSource(sources: any[], props: { sourceProps: object }) {
     // TODO: Filter source.isActive to ensure we're getting the best match
-    return sources.find((x) => isMatch(x.props, props.sourceProps))
+    return sources.find((x: { props: object }) => isMatch(x.props, props.sourceProps))
   },
   create({ onUpdate, onNewSource, onRemove }, initialProps) {
     const root = document.createElement('div')
@@ -71,10 +72,9 @@ export const RoomParticipant = {
       props: Props
       source: RoomParticipantSource
     }) => {
-      const ref = useRef<HTMLVideoElement>()
-
-      const { volume = 1, isHidden = false } = props || {}
+      const { volume = 1, isHidden = false, noDisplay = false } = props
       const [labelSize, setLabelSize] = useState<0 | 1 | 2 | 3>(0)
+      const ref = useRef<HTMLVideoElement>()
 
       /* It's checking if the participant is the local participant. */
       const isSelf =
@@ -86,8 +86,9 @@ export const RoomParticipant = {
       const muteAudio = isSelf || props?.isMuted
 
       // Hide video if explicitly isHidden by host or
-      // if the participant is sending no video
-      const hasVideo = !props?.isHidden && source?.props?.videoEnabled
+      //  if the participant is sending no video
+      const hasVideo = !props?.isHidden && source?.props.videoEnabled
+      const hasSeen = props.noDisplay
 
       useEffect(() => {
         if (!ref.current) return
@@ -156,8 +157,9 @@ export const RoomParticipant = {
           }}
         >
           <div
+            hidden={hasSeen}
             style={{
-              background: '#222',
+              background: hasSeen ? '' : '#222',
               position: 'absolute',
               height: '100%',
               width: '100%',
@@ -169,7 +171,7 @@ export const RoomParticipant = {
               opacity: hasVideo ? '0' : '1',
             }}
           >
-            {source?.props.displayName && (
+            {!hasSeen && source?.props.displayName && (
               <div
                 style={{
                   borderRadius: '50%',
@@ -187,17 +189,7 @@ export const RoomParticipant = {
               </div>
             )}
           </div>
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              height: '100%',
-              width: '100%',
-              ...(Boolean(source?.props?.mirrored) && {
-                transform: 'scaleX(-1)',
-              }),
-            }}
-          >
+          <div>
             <video
               ref={ref}
               autoPlay={true}
@@ -217,7 +209,7 @@ export const RoomParticipant = {
               }}
             />
           </div>
-          {source?.props.displayName && (
+          {!hasSeen && source?.props.displayName && (
             <div
               className="NameBannerContainer"
               style={{
@@ -261,12 +253,12 @@ export const RoomParticipant = {
     const render = () =>
       ReactDOM.render(<Participant source={source} props={props} />, root)
 
-    onUpdate((_props) => {
+    onUpdate((_props: any) => {
       props = _props
       render()
     })
 
-    onNewSource((_source) => {
+    onNewSource((_source: any) => {
       source = _source
       render()
     })
