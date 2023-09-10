@@ -79,6 +79,7 @@ export type HTMLVideoElementAttributes = {
 const addingCache = {
   camera: new Set<string>(),
   screen: new Set<string>(),
+  rtmp: new Set<string>(),
 }
 
 export type ParticipantType = 'camera' | 'screen'
@@ -286,6 +287,23 @@ export interface Commands {
   useShowcase(
     cb: (state: { participantId: string; type: ParticipantType }) => void,
   ): Disposable
+
+  /**
+   * Add an RTMP Source to the canvas
+   */
+  addRTMPSource(
+    id: string,
+    props: Partial<ParticipantProps>,
+    type?: ParticipantType,
+  ): Promise<void>
+
+  /**
+   * Remove an RTMP source from the canvas
+   */
+  removeRTMPSource(
+    id: string
+  ): void
+
   /**
    * Add a participant camera track to the stream canvas.
    * Available participants can be gleaned from the WebRTC {@link Room} using
@@ -444,6 +462,14 @@ export interface Commands {
    * Use the latest value of an arbitrary property on the project (`project.props{}`)
    */
   useProp(props: string, cb: (val: any) => void): void
+  /**
+   * Add a source TEMPORARY
+   */
+  createSource: typeof CoreContext.Command.createSource
+  /**
+   * Remove a source TEMPORARY
+   */
+  deleteSource: typeof CoreContext.Command.deleteSource
 }
 
 /**
@@ -1509,6 +1535,68 @@ export const commands = (_project: ScenelessProject) => {
       })
     },
 
+    async addRTMPSource(
+      id: string,
+      props: Partial<ParticipantProps> = {
+        isMuted: true,
+        isHidden: false,
+        volume: 0,
+      },
+    ) {
+      const type = 'rtmp'
+      if (addingCache[type].has(id)) {
+        return
+      }
+      const { isMuted = false, isHidden = false, volume = 1 } = props
+      const existing = content.children.find(
+        (x) =>
+          x.props.sourceProps?.id === id &&
+          x.props.sourceProps?.type === type,
+      )
+      if (existing) return
+
+      addingCache[type].add(id)
+      // Get the participant type in the first position
+      const currentFirst = content.children[0]
+      let index = content.children.length
+
+      await CoreContext.Command.createNode({
+        props: {
+          name: 'RTMP',
+          sourceType: 'RTMP',
+          sourceProps: {
+            type,
+            id,
+          },
+          volume,
+          isMuted,
+          isHidden,
+        },
+        parentId: content.id,
+        index,
+      }).finally(() => {
+        addingCache[type].delete(id)
+      })
+    },
+
+    removeRTMPSource(
+      id: string,
+    ) {
+      const type = 'rtmp'
+      content.children
+        .filter(
+          (x) =>
+            x.props.sourceProps?.id === id &&
+            x.props.sourceProps?.type === type &&
+            x.props.sourceType === 'RTMP',
+        )
+        .forEach((x) => {
+          CoreContext.Command.deleteNode({
+            nodeId: x.id,
+          })
+        })
+    },
+
     async addParticipantTrack(
       trackId: string,
       props: Partial<ParticipantProps> = {
@@ -1796,6 +1884,25 @@ export const commands = (_project: ScenelessProject) => {
           cb(payload.project.props[prop])
         }
       })
+    },
+    createSource(payload) {
+      return CoreContext.Command.createSource(payload)
+    },
+    deleteSource(payload) {
+      const type = 'rtmp'
+      content.children
+        .filter(
+          (x) =>
+            x.props.sourceProps?.id === payload.sourceId &&
+            x.props.sourceProps?.type === type &&
+            x.props.sourceType === 'RTMP',
+        )
+        .forEach((x) => {
+          CoreContext.Command.deleteNode({
+            nodeId: x.id,
+          })
+        })
+      return CoreContext.Command.deleteSource(payload)
     },
   }
   const ensureValid = async () => {

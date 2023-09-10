@@ -11,16 +11,21 @@ const { Room } = Helpers
 const { useStudio } = Helpers.React
 
 
-export const Participants = ({room , projectCommands ,studio} : {room:any,projectCommands:any ,studio:any}) => {
+export const Participants = ({ room, projectCommands, studio }: { room: SDK.Room, projectCommands: Helpers.ScenelessProject.Commands, studio: any }) => {
 
   const { isHost } = useContext(AppContext)
+  const { project } = useStudio()
   const [participants, setParticipants] = useState<SDK.Participant[]>([])
 
   // Listen for room participants
   useEffect(() => {
     if (!room) return
-    return room.useParticipants((participants:any) => {
-      setParticipants(participants)
+    return room.useParticipants((participants) => {
+      const sourceIds = project.sources.map((s) => s.id)
+      setParticipants(
+        participants
+          .filter((p) => sourceIds.some((id) => id === p.id))
+      )
       // Prune non-existent guests from the project
       if (isHost) projectCommands.pruneParticipants()
     })
@@ -43,7 +48,7 @@ export const Participants = ({room , projectCommands ,studio} : {room:any,projec
 type ParticipantProps = {
   participant: SDK.Participant
   room?: any
-  projectCommands?:any
+  projectCommands?: Helpers.ScenelessProject.Commands
   studio?: any
 }
 export const ParticipantCamera = ({
@@ -180,7 +185,7 @@ export const ParticipantScreenshare = ({
   )
 }
 
-export const Participant = ({ participant , room , projectCommands}: ParticipantProps) => {
+export const Participant = ({ participant, room, projectCommands }: ParticipantProps) => {
   const [tracks, setTracks] = useState([])
   const screenshare = tracks.find((x) => x.type === 'screen_share')
   const webcam = tracks.find((x) => x.type === 'camera')
@@ -218,11 +223,12 @@ const HostControls = ({
   projectCommands,
   room
 }: ParticipantProps & { type: 'screen' | 'camera' }) => {
+  const { project } = useStudio()
   const { id } = participant
 
   // Get the initial props in case the participant is on stream
   const projectParticipant = useMemo(
-    () => projectCommands.getParticipantState(id, type),
+    () => projectCommands?.getParticipantState(id, type),
     [],
   )
 
@@ -235,9 +241,9 @@ const HostControls = ({
   // Monitor whether the participant has been removed from the stream
   //  from some other means (e.g. dragged off canvas by host)
   useEffect(() => {
-    return projectCommands.useParticipantState(
+    return projectCommands?.useParticipantState(
       id,
-      (x:any) => {
+      (x: any) => {
         setOnStream(Boolean(x))
       },
       type,
@@ -248,7 +254,7 @@ const HostControls = ({
   //  participant/type is active
   useEffect(
     () =>
-      projectCommands.useShowcase((showcase:any) => {
+      projectCommands?.useShowcase((showcase: any) => {
         setIsShowcase(showcase.participantId === id && showcase.type === type)
       }),
 
@@ -283,16 +289,24 @@ const HostControls = ({
             onChange={(e) => {
               const checked = e.target.checked
               if (checked) {
-                projectCommands.addParticipant(id, { isMuted, volume, noDisplay: true, isHidden: true }, type)
+                if (project.sources.some((source) => source.id === id)) {
+                  projectCommands?.addRTMPSource(id, {})
+                } else {
+                  projectCommands?.addParticipant(id, { isMuted, volume, noDisplay: true, isHidden: true }, type)
+                }
               } else {
-                projectCommands.removeParticipant(id, type)
+                if (project.sources.some((source) => source.id === id)) {
+                  projectCommands?.removeRTMPSource(id)
+                } else {
+                  projectCommands?.removeParticipant(id, type)
+                }
               }
               setOnStream(checked)
             }}
           />
           On stream
         </label>
-         <label>
+        <label>
           <input
             type="checkbox"
             checked={onStream}
@@ -300,9 +314,9 @@ const HostControls = ({
             onChange={(e) => {
               const checked = e.target.checked
               if (checked) {
-                 room.setLocalParticipantMetadata(room?.participantId , { ...participant.meta , isMirrored: true })
+                room.setLocalParticipantMetadata(room?.participantId, { ...participant.meta, isMirrored: true })
               } else {
-                room.setLocalParticipantMetadata(room?.participantId , { ...participant.meta , isMirrored: false })
+                room.setLocalParticipantMetadata(room?.participantId, { ...participant.meta, isMirrored: false })
               }
               setOnStream(checked)
             }}
@@ -318,9 +332,9 @@ const HostControls = ({
             checked={isShowcase}
             onChange={() => {
               if (isShowcase) {
-                projectCommands.setShowcase(null)
+                projectCommands?.setShowcase(null)
               } else {
-                projectCommands.setShowcase(id, type)
+                projectCommands?.setShowcase(id, type)
               }
             }}
           />
@@ -339,12 +353,12 @@ const HostControls = ({
               style={{ opacity: isMuted ? 0.4 : 1 }}
               onChange={(e) => {
                 const value = Number(e.target.value)
-                projectCommands.setParticipantVolume(id, value)
+                projectCommands?.setParticipantVolume(id, value)
                 setVolume(value)
 
                 // Unmute when user changes the volume slider
                 if (isMuted) {
-                  projectCommands.setParticipantMuted(id, false)
+                  projectCommands?.setParticipantMuted(id, false)
                   setIsMuted(false)
                 }
               }}
@@ -355,7 +369,7 @@ const HostControls = ({
               checked={!isMuted}
               onChange={(e) => {
                 const checked = e.target.checked
-                projectCommands.setParticipantMuted(id, !checked)
+                projectCommands?.setParticipantMuted(id, !checked)
                 setIsMuted(!checked)
               }}
             />
