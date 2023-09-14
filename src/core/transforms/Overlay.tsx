@@ -25,6 +25,9 @@ let isUserInteracting = false,
       onPointerDownLon = 0,
       onPointerDownLat = 0;
 
+const VIDEO_WIDTH = 1440;
+const VIDEO_HEIGHT = 720;
+
 const distance = 50;
 
 interface ISourceMap {
@@ -252,11 +255,11 @@ export const Overlay = {
 
             var renderer = new THREE.WebGLRenderer({ alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(VIDEO_WIDTH, VIDEO_HEIGHT);
             videoRef.current!.parentElement.appendChild(renderer.domElement);
 
             var scene = new THREE.Scene();
-            var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            var camera = new THREE.PerspectiveCamera(75, VIDEO_WIDTH / VIDEO_HEIGHT, 0.1, 2000);
             renderer.render(scene, camera);
 
             var texture = new THREE.VideoTexture(videoRef.current, THREE.EquirectangularReflectionMapping);
