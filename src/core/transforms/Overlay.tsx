@@ -25,8 +25,8 @@ let isUserInteracting = false,
       onPointerDownLon = 0,
       onPointerDownLat = 0;
 
-const VIDEO_WIDTH = 1600;
-const VIDEO_HEIGHT = 900;
+const VIDEO_WIDTH = 1280;
+const VIDEO_HEIGHT = 720;
 
 const distance = 50;
 
