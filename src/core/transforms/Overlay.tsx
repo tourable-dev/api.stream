@@ -236,9 +236,7 @@ export const Overlay = {
               if(videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
                 videoRef.current!.src = src
               } else if (Hls.isSupported()) {
-                var hls = new Hls({
-                  enableWorker: false,
-                })
+                var hls = new Hls()
                 hls.loadSource(src)
                 hls.attachMedia(videoRef.current)
               }
