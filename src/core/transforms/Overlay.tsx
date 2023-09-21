@@ -25,7 +25,7 @@ let isUserInteracting = false,
       onPointerDownLon = 0,
       onPointerDownLat = 0;
 
-const VIDEO_WIDTH = 1280;
+const VIDEO_WIDTH = 1692;
 const VIDEO_HEIGHT = 720;
 
 const distance = 50;
@@ -396,7 +396,7 @@ export const Overlay = {
 
       // Edited for Custom 360 Video Player
       return (
-        <div style={{position: "relative", width: "100%", height: "100%"}}>
+        <div style={{position: "relative", width: "132.1875%", height: "100%"}}>
         <React.Fragment key={id}>
           {src && (
             <video
