@@ -249,6 +249,7 @@ export const Overlay = {
             videoRef.current!.crossOrigin = "anonymous"
             videoRef.current!.hidden = true
             videoRef.current!.muted = true
+            videoRef.current!.loop = false
             videoRef.current!.style.zIndex = "-1"
 
             var renderer = new THREE.WebGLRenderer({ alpha: true });
