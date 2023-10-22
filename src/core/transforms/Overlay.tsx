@@ -18,17 +18,19 @@ import * as THREE from 'three'
 import Hls from 'hls.js'
 
 let isUserInteracting = false,
-      lon = 0, lat = 0,
-      phi = 0, theta = 0,
-      onPointerDownPointerX = 0,
-      onPointerDownPointerY = 0,
-      onPointerDownLon = 0,
-      onPointerDownLat = 0;
+  lon = 0,
+  lat = 0,
+  phi = 0,
+  theta = 0,
+  onPointerDownPointerX = 0,
+  onPointerDownPointerY = 0,
+  onPointerDownLon = 0,
+  onPointerDownLat = 0
 
-const VIDEO_WIDTH = 1280;
-const VIDEO_HEIGHT = 720;
+const VIDEO_WIDTH = 1280
+const VIDEO_HEIGHT = 720
 
-const distance = 50;
+const distance = 50
 
 interface ISourceMap {
   sourceType: string
@@ -142,19 +144,18 @@ export const Overlay = {
       source: OverlaySource
       setStartAnimation: (value: boolean) => void
     }) => {
-
       // BEGIN Custom 360 Video Player
       const Play = () => {
         if (videoRef?.current?.currentTime) {
-          room.sendData({type: "VideoPlay"});
-          videoRef.current!.play();
+          room.sendData({ type: 'VideoPlay' })
+          videoRef.current!.play()
         }
       }
 
       const Pause = () => {
         if (videoRef?.current?.currentTime) {
-          room.sendData({type: "VideoPause"});
-          videoRef.current!.pause();
+          room.sendData({ type: 'VideoPause' })
+          videoRef.current!.pause()
         }
       }
       // END Custom 360 Video Player
@@ -169,7 +170,8 @@ export const Overlay = {
       const [progress, setProgress] = React.useState(0)
       const handleProgressEvent = () => {
         if (videoRef?.current?.currentTime) {
-          const percent = videoRef.current.currentTime / videoRef.current.duration
+          const percent =
+            videoRef.current.currentTime / videoRef.current.duration
           setProgress(percent * 100)
         }
       }
@@ -232,13 +234,25 @@ export const Overlay = {
         } else {
           if (videoRef.current) {
             // BEGIN Custom 360 Video Player
-            if(src.includes('m3u8')) {
-              if(videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+            if (src.includes('m3u8')) {
+              if (
+                videoRef.current.canPlayType('application/vnd.apple.mpegurl')
+              ) {
                 videoRef.current!.src = src
               } else if (Hls.isSupported()) {
-                var hls = new Hls()
+                var hls = new Hls({
+                  // use the second-to-lowest quality to maximize initial loading time
+                  // then let adaptive bitrate kick in
+                  startLevel: 1,
+                })
                 hls.loadSource(src)
                 hls.attachMedia(videoRef.current)
+                hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+                  console.log(
+                    'HLS Manifest Parsed, here are the levels available:',
+                    hls.levels,
+                  )
+                })
               }
             } else {
               videoRef.current!.src = src
@@ -246,86 +260,94 @@ export const Overlay = {
             // END Custom 360 Video Player
 
             // BEGIN Custom 360 Video Player
-            videoRef.current!.crossOrigin = "anonymous"
+            videoRef.current!.crossOrigin = 'anonymous'
             videoRef.current!.hidden = true
             videoRef.current!.muted = true
             videoRef.current!.loop = false
-            videoRef.current!.style.zIndex = "-1"
+            videoRef.current!.style.zIndex = '-1'
 
-            var renderer = new THREE.WebGLRenderer({ alpha: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(VIDEO_WIDTH, VIDEO_HEIGHT);
-            videoRef.current!.parentElement.appendChild(renderer.domElement);
+            var renderer = new THREE.WebGLRenderer({ alpha: true })
+            renderer.setPixelRatio(window.devicePixelRatio)
+            renderer.setSize(VIDEO_WIDTH, VIDEO_HEIGHT)
+            videoRef.current!.parentElement.appendChild(renderer.domElement)
 
-            var scene = new THREE.Scene();
-            var camera = new THREE.PerspectiveCamera(75, VIDEO_WIDTH / VIDEO_HEIGHT, 0.1, 2000);
-            renderer.render(scene, camera);
+            var scene = new THREE.Scene()
+            var camera = new THREE.PerspectiveCamera(
+              75,
+              VIDEO_WIDTH / VIDEO_HEIGHT,
+              0.1,
+              2000,
+            )
+            renderer.render(scene, camera)
 
-            var texture = new THREE.VideoTexture(videoRef.current, THREE.EquirectangularReflectionMapping);
+            var texture = new THREE.VideoTexture(
+              videoRef.current,
+              THREE.EquirectangularReflectionMapping,
+            )
 
-            const sphere = new THREE.SphereGeometry(1000, 64, 40);
-            sphere.scale(-1, 1, 1);
+            const sphere = new THREE.SphereGeometry(1000, 64, 40)
+            sphere.scale(-1, 1, 1)
             const videoSphere = new THREE.Mesh(
               sphere,
-              new THREE.MeshBasicMaterial({color: new THREE.Color(0xFFFFFF), map: texture})
-            );
-            scene.add(videoSphere);
+              new THREE.MeshBasicMaterial({
+                color: new THREE.Color(0xffffff),
+                map: texture,
+              }),
+            )
+            scene.add(videoSphere)
 
-            document.addEventListener( 'pointerdown', onPointerDown );
-            document.addEventListener( 'pointermove', onPointerMove );
-            document.addEventListener( 'pointerup', onPointerUp );
-            videoRef.current!.addEventListener( 'timeupdate', handleProgressEvent );
+            document.addEventListener('pointerdown', onPointerDown)
+            document.addEventListener('pointermove', onPointerMove)
+            document.addEventListener('pointerup', onPointerUp)
+            videoRef.current!.addEventListener(
+              'timeupdate',
+              handleProgressEvent,
+            )
 
-            animate();
+            animate()
 
             function onPointerDown(event: MouseEvent) {
+              isUserInteracting = true
 
-              isUserInteracting = true;
+              onPointerDownPointerX = event.clientX
+              onPointerDownPointerY = event.clientY
 
-              onPointerDownPointerX = event.clientX;
-              onPointerDownPointerY = event.clientY;
-
-              onPointerDownLon = lon;
-              onPointerDownLat = lat;
-
+              onPointerDownLon = lon
+              onPointerDownLat = lat
             }
 
-            function onPointerMove( event : MouseEvent ) {
-
-              if ( isUserInteracting === true ) {
-
-                lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
-                lat = ( onPointerDownPointerY - event.clientY ) * 0.1 + onPointerDownLat;
-
+            function onPointerMove(event: MouseEvent) {
+              if (isUserInteracting === true) {
+                lon =
+                  (onPointerDownPointerX - event.clientX) * 0.1 +
+                  onPointerDownLon
+                lat =
+                  (onPointerDownPointerY - event.clientY) * 0.1 +
+                  onPointerDownLat
               }
-
             }
 
             function onPointerUp() {
-
-              isUserInteracting = false;
-
+              isUserInteracting = false
             }
 
             function animate() {
-              requestAnimationFrame(animate);
-              update();
+              requestAnimationFrame(animate)
+              update()
             }
 
             function update() {
+              lat = Math.max(-85, Math.min(85, lat))
+              phi = THREE.MathUtils.degToRad(90 - lat)
+              theta = THREE.MathUtils.degToRad(lon)
 
-              lat = Math.max( - 85, Math.min( 85, lat ) );
-              phi = THREE.MathUtils.degToRad( 90 - lat );
-              theta = THREE.MathUtils.degToRad( lon );
+              camera.position.x = distance * Math.sin(phi) * Math.cos(theta)
+              camera.position.y = distance * Math.cos(phi)
+              camera.position.z = distance * Math.sin(phi) * Math.sin(theta)
 
-              camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
-              camera.position.y = distance * Math.cos( phi );
-              camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
+              camera.lookAt(0, 0, 0)
 
-              camera.lookAt( 0, 0, 0 );
-
-              renderer.render( scene, camera );
-
+              renderer.render(scene, camera)
             }
 
             if (loop) {
@@ -341,8 +363,16 @@ export const Overlay = {
                 if (videoRef.current.duration) {
                   const timePending =
                     videoRef.current.duration - videoRef.current.currentTime
-                  console.log('sendData',{type: "UpdateVideoTime", id: 'HOST', time: Math.floor(videoRef?.current?.currentTime) || 0})
-                  room?.sendData({type: "UpdateVideoTime", id: 'HOST', time: Math.floor(videoRef?.current?.currentTime) || 0})
+                  console.log('sendData', {
+                    type: 'UpdateVideoTime',
+                    id: 'HOST',
+                    time: Math.floor(videoRef?.current?.currentTime) || 0,
+                  })
+                  room?.sendData({
+                    type: 'UpdateVideoTime',
+                    id: 'HOST',
+                    time: Math.floor(videoRef?.current?.currentTime) || 0,
+                  })
                   trigger('VideoTimeUpdate', {
                     category: sourceType,
                     id: id,
@@ -362,13 +392,18 @@ export const Overlay = {
                   event.type === 'UserJoined' &&
                   hasPermission(role, Permission.ManageGuests)
                 ) {
-                  console.log('event: UserJoined', videoRef?.current?.currentTime)
-                  room?.sendData({type: "UpdateVideoTime", id: senderId, time: Math.floor(videoRef?.current?.currentTime) || 0})
-                } else if (event.type === 'VideoPause'
-                ) {
+                  console.log(
+                    'event: UserJoined',
+                    videoRef?.current?.currentTime,
+                  )
+                  room?.sendData({
+                    type: 'UpdateVideoTime',
+                    id: senderId,
+                    time: Math.floor(videoRef?.current?.currentTime) || 0,
+                  })
+                } else if (event.type === 'VideoPause') {
                   videoRef.current!.pause()
-                } else if (event.type === 'VideoPlay'
-                ) {
+                } else if (event.type === 'VideoPlay') {
                   videoRef.current!.play()
                 }
               }
@@ -380,12 +415,23 @@ export const Overlay = {
 
       // BEGIN Custom 360 Video Player
       React.useEffect(() => {
-        if (!refId) return;
+        if (!refId) return
         if (videoRef.current) {
           return room?.onData((event, senderId) => {
-            console.log('event: UpdateVideoTime. event.time:', event.time, 'currentTime:', videoRef?.current?.currentTime)
-            if (event.type === 'UpdateVideoTime' && !hasPermission(role, Permission.UpdateProject) && Math.abs(videoRef.current.currentTime - event.time) > 1.5) {
-              console.log('UpdateVideoTime. Time sync difference is greater than 1.5 seconds')
+            console.log(
+              'event: UpdateVideoTime. event.time:',
+              event.time,
+              'currentTime:',
+              videoRef?.current?.currentTime,
+            )
+            if (
+              event.type === 'UpdateVideoTime' &&
+              !hasPermission(role, Permission.UpdateProject) &&
+              Math.abs(videoRef.current.currentTime - event.time) > 1.5
+            ) {
+              console.log(
+                'UpdateVideoTime. Time sync difference is greater than 1.5 seconds',
+              )
               videoRef.current.currentTime = event.time
             }
           })
@@ -395,28 +441,84 @@ export const Overlay = {
 
       // Edited for Custom 360 Video Player
       return (
-        <div style={{position: "relative", width: "100%", height: "100%"}}>
-        <React.Fragment key={id}>
-          {src && (
-            <video
-              id={id}
-              ref={handleRect}
-              style={{ ...sourceProps.meta.style, ...meta.style }}
-              onLoadedData={onLoadedData}
-              onEnded={onEnded}
-              onCanPlay={() => setStartAnimation(true)}
-            />
-          )}
-        </React.Fragment>
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <React.Fragment key={id}>
+            {src && (
+              <video
+                id={id}
+                ref={handleRect}
+                style={{ ...sourceProps.meta.style, ...meta.style }}
+                onLoadedData={onLoadedData}
+                onEnded={onEnded}
+                onCanPlay={() => setStartAnimation(true)}
+              />
+            )}
+          </React.Fragment>
 
-        { hasPermission(role, Permission.ManageGuests) && (
-            <div id="360controls" style={{position: "absolute", display: "flex", flexDirection: "row", left: "12.5%", width: "75%", height: "100%", paddingBottom: "10px", backgroundColor: "transparent", pointerEvents: "auto", zIndex: 1000, alignItems: "end"}}>
-              <button id="360playpause" onClick={Play} style={{display: "flex", padding: "0.5em", marginRight: "0.5em", backgroundColor: "white", color: "black", border: "none", borderRadius: "0.5em"}}>Play</button>
-              <button id="360playpause" onClick={Pause} style={{ display: "flex", padding: "0.5em", backgroundColor: "white", color: "black", border: "none", borderRadius: "0.5em"}}>Pause.</button>
-              <input type="range" min="0" max="100" value={progress} style={{display: "flex", width: "100%", margin: "0 0.5em", pointerEvents: "none", padding: "0.5em"}} className="slider" id="myRange" step="0.5"/>
+          {hasPermission(role, Permission.ManageGuests) && (
+            <div
+              id="360controls"
+              style={{
+                position: 'absolute',
+                display: 'flex',
+                flexDirection: 'row',
+                left: '12.5%',
+                width: '75%',
+                height: '100%',
+                paddingBottom: '10px',
+                backgroundColor: 'transparent',
+                pointerEvents: 'auto',
+                zIndex: 1000,
+                alignItems: 'end',
+              }}
+            >
+              <button
+                id="360playpause"
+                onClick={Play}
+                style={{
+                  display: 'flex',
+                  padding: '0.5em',
+                  marginRight: '0.5em',
+                  backgroundColor: 'white',
+                  color: 'black',
+                  border: 'none',
+                  borderRadius: '0.5em',
+                }}
+              >
+                Play
+              </button>
+              <button
+                id="360playpause"
+                onClick={Pause}
+                style={{
+                  display: 'flex',
+                  padding: '0.5em',
+                  backgroundColor: 'white',
+                  color: 'black',
+                  border: 'none',
+                  borderRadius: '0.5em',
+                }}
+              >
+                Pause.
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={progress}
+                style={{
+                  display: 'flex',
+                  width: '100%',
+                  margin: '0 0.5em',
+                  pointerEvents: 'none',
+                  padding: '0.5em',
+                }}
+                className="slider"
+                id="myRange"
+                step="0.5"
+              />
             </div>
-          )
-          }
+          )}
         </div>
       )
     }
