@@ -9,11 +9,9 @@ import APIKitAnimation from '../../compositor/html/html-animation'
 import { APIKitAnimationTypes } from '../../animation/core/types'
 import { getProject, getProjectRoom } from '../data'
 import CoreContext from '../context'
-import { InternalEventMap, trigger } from '../events'
+import { trigger } from '../events'
 import { hasPermission, Permission } from '../../helpers/permission'
 import Iframe from './components/Iframe'
-
-// BEGIN Custom 360 Video Player Imports
 import * as THREE from 'three'
 import Hls from 'hls.js'
 
@@ -29,25 +27,7 @@ let isUserInteracting = false,
 
 const VIDEO_WIDTH = 1280
 const VIDEO_HEIGHT = 720
-
 const distance = 50
-
-interface ISourceMap {
-  sourceType: string
-  trigger: keyof InternalEventMap
-}
-
-const SourceTriggerMap = [
-  {
-    sourceType: 'Overlay',
-    trigger: 'OverlayMetadataUpdate',
-  },
-  {
-    sourceType: 'Background',
-    trigger: 'BackgroundMetadataUpdate',
-  },
-] as ISourceMap[]
-// END Custom 360 Video Player Imports
 
 export type OverlayProps = {
   src?: string
@@ -240,14 +220,14 @@ export const Overlay = {
               ) {
                 videoRef.current!.src = src
               } else if (Hls.isSupported()) {
-                var hls = new Hls({
+                const hls = new Hls({
                   // use the second-to-lowest quality to maximize initial loading time
                   // then let adaptive bitrate kick in
                   startLevel: 1,
                 })
                 hls.loadSource(src)
                 hls.attachMedia(videoRef.current)
-                hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+                hls.on(Hls.Events.MANIFEST_PARSED, (_event, _data) => {
                   console.log(
                     'HLS Manifest Parsed, here are the levels available:',
                     hls.levels,
@@ -266,13 +246,13 @@ export const Overlay = {
             videoRef.current!.loop = false
             videoRef.current!.style.zIndex = '-1'
 
-            var renderer = new THREE.WebGLRenderer({ alpha: true })
+            const renderer = new THREE.WebGLRenderer({ alpha: true })
             renderer.setPixelRatio(window.devicePixelRatio)
             renderer.setSize(VIDEO_WIDTH, VIDEO_HEIGHT)
             videoRef.current!.parentElement.appendChild(renderer.domElement)
 
-            var scene = new THREE.Scene()
-            var camera = new THREE.PerspectiveCamera(
+            const scene = new THREE.Scene()
+            const camera = new THREE.PerspectiveCamera(
               75,
               VIDEO_WIDTH / VIDEO_HEIGHT,
               0.1,
@@ -280,7 +260,7 @@ export const Overlay = {
             )
             renderer.render(scene, camera)
 
-            var texture = new THREE.VideoTexture(
+            const texture = new THREE.VideoTexture(
               videoRef.current,
               THREE.EquirectangularReflectionMapping,
             )
@@ -296,40 +276,32 @@ export const Overlay = {
             )
             scene.add(videoSphere)
 
-            document.addEventListener('pointerdown', onPointerDown)
-            document.addEventListener('pointermove', onPointerMove)
-            document.addEventListener('pointerup', onPointerUp)
+            document.addEventListener('pointerdown', (e) => {
+              isUserInteracting = true
+
+              onPointerDownPointerX = e.clientX
+              onPointerDownPointerY = e.clientY
+
+              onPointerDownLon = lon
+              onPointerDownLat = lat
+            })
+            document.addEventListener('pointermove', (e) => {
+              if (isUserInteracting === true) {
+                lon =
+                  (onPointerDownPointerX - e.clientX) * 0.1 + onPointerDownLon
+                lat =
+                  (onPointerDownPointerY - e.clientY) * 0.1 + onPointerDownLat
+              }
+            })
+            document.addEventListener('pointerup', () => {
+              isUserInteracting = false
+            })
             videoRef.current!.addEventListener(
               'timeupdate',
               handleProgressEvent,
             )
 
             animate()
-
-            function onPointerDown(event: MouseEvent) {
-              isUserInteracting = true
-
-              onPointerDownPointerX = event.clientX
-              onPointerDownPointerY = event.clientY
-
-              onPointerDownLon = lon
-              onPointerDownLat = lat
-            }
-
-            function onPointerMove(event: MouseEvent) {
-              if (isUserInteracting === true) {
-                lon =
-                  (onPointerDownPointerX - event.clientX) * 0.1 +
-                  onPointerDownLon
-                lat =
-                  (onPointerDownPointerY - event.clientY) * 0.1 +
-                  onPointerDownLat
-              }
-            }
-
-            function onPointerUp() {
-              isUserInteracting = false
-            }
 
             function animate() {
               requestAnimationFrame(animate)
@@ -417,7 +389,7 @@ export const Overlay = {
       React.useEffect(() => {
         if (!refId) return
         if (videoRef.current) {
-          return room?.onData((event, senderId) => {
+          return room?.onData((event, _senderId) => {
             console.log(
               'event: UpdateVideoTime. event.time:',
               event.time,

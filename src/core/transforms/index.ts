@@ -14,6 +14,4 @@ export * from './ChatOverlay'
 export * from './Background'
 
 // TODO: remove this transformers after a while when this version of sdk (1.1.58) is adopted by all users
-export * from './Video2'
-export * from './Image2'
 export * from './RTMPSource'
