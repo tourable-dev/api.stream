@@ -2,7 +2,7 @@
  * Copyright (c) Infiniscene, Inc. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import React, { useEffect } from 'react'
 import { Compositor } from '../namespaces'
 import APIKitAnimation from '../../compositor/html/html-animation'
@@ -100,8 +100,7 @@ export const Logo = {
       )
     }
 
-    const render = (source: LogoSource) =>
-      ReactDOM.render(<Logo source={source} />, root)
+    const render = (source: LogoSource) => createRoot(root).render(<Logo source={source} />)
 
     onUpdate((props) => {
       render({ ...props })

@@ -2,7 +2,7 @@
  * Copyright (c) Infiniscene, Inc. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Compositor } from '../namespaces'
 import * as Colors from '../../helpers/colors'
@@ -438,8 +438,7 @@ export const ChatOverlay = {
       )
     }
 
-    const render = (rest: ChatOverlayProps) =>
-      ReactDOM.render(<ChatOverlay {...rest} />, root)
+    const render = (rest: ChatOverlayProps) => createRoot(root).render(<ChatOverlay {...rest} />)
 
     /* It's a callback that is called when the props are updated. */
     onUpdate((props: ChatOverlayProps) => {

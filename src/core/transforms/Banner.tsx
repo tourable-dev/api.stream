@@ -2,7 +2,7 @@
  * Copyright (c) Infiniscene, Inc. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import React, { useEffect, useState } from 'react'
 import { Compositor } from '../namespaces'
 import { BannerSource } from '../sources/Banners'
@@ -100,24 +100,21 @@ export const Banner = {
     }
 
     const render = () =>
-      ReactDOM.render(
-        <>
-          {/* Preserve previous source for animation out */}
-          {previousSource && previousSource.id !== latestSource.id && (
-            <Banner
-              key={previousSource?.id}
-              currentSource={null}
-              latestSource={previousSource}
-            />
-          )}
+      createRoot(root).render(<>
+        {/* Preserve previous source for animation out */}
+        {previousSource && previousSource.id !== latestSource.id && (
           <Banner
-            key={latestSource?.id}
-            currentSource={source}
-            latestSource={latestSource}
+            key={previousSource?.id}
+            currentSource={null}
+            latestSource={previousSource}
           />
-        </>,
-        root,
-      )
+        )}
+        <Banner
+          key={latestSource?.id}
+          currentSource={source}
+          latestSource={latestSource}
+        />
+      </>)
 
     onUpdate(() => {
       render()

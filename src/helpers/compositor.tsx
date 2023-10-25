@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { swapItems } from '../logic'
 import { getProject } from '../core/data'
 import { CoreContext, log, InternalProject } from '../core/context'
@@ -510,22 +510,19 @@ export const render = (settings: CompositorSettings) => {
   }
 
   const render = () => {
-    ReactDOM.render(
-      <CompositorProvider
-        project={project}
-        interactive={dragAndDrop}
-        onElementDoubleClick={onElementDoubleClick}
-        checkIsDropTarget={checkDropTarget}
-        checkIsDragTarget={checkDragTarget}
-      >
-        <Root
-          setStyle={(CSS: string) => {
-            customStyleEl.textContent = CSS
-          }}
-        />
-      </CompositorProvider>,
-      wrapperEl,
-    )
+    createRoot(wrapperEl).render(<CompositorProvider
+      project={project}
+      interactive={dragAndDrop}
+      onElementDoubleClick={onElementDoubleClick}
+      checkIsDropTarget={checkDropTarget}
+      checkIsDragTarget={checkDragTarget}
+    >
+      <Root
+        setStyle={(CSS: string) => {
+          customStyleEl.textContent = CSS
+        }}
+      />
+    </CompositorProvider>)
   }
 
   setScale()

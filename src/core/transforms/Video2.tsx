@@ -2,7 +2,7 @@
  * Copyright (c) Infiniscene, Inc. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import React from 'react'
 import { CoreContext } from '../context'
 import { getProject, getProjectRoom } from '../data'
@@ -313,7 +313,7 @@ export const Video2 = {
       )
     }
 
-    const render = () => ReactDOM.render(<Video source={source} />, root)
+    const render = () => createRoot(root).render(<Video source={source} />)
 
     onUpdate(() => {
       render()

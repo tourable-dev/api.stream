@@ -2,7 +2,7 @@
  * Copyright (c) Infiniscene, Inc. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import React, { useEffect } from 'react'
 import { Compositor } from '../namespaces'
 import APIKitAnimation from '../../compositor/html/html-animation'
@@ -207,13 +207,7 @@ export const Background = {
       )
     }
 
-    const render = (source: BackgroundSource) =>
-      ReactDOM.render(
-        <>
-          <Background source={source} />
-        </>,
-        root,
-      )
+    const render = (source: BackgroundSource) => createRoot(root).render(<Background source={source} />)
 
     onUpdate((props) => {
       render({ ...props })

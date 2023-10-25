@@ -2,7 +2,7 @@
  * Copyright (c) Infiniscene, Inc. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * -------------------------------------------------------------------------------------------- */
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import React, { useLayoutEffect, useState, useEffect, useRef } from 'react'
 import { isMatch } from 'lodash-es'
 import { CoreContext } from '../context'
@@ -238,8 +238,7 @@ export const RTMPSource = {
       )
     };
 
-    const render = () =>
-      ReactDOM.render(<RTMPLayer source={source} props={props} />, root)
+    const render = () => createRoot(root).render(<RTMPLayer source={source} props={props} />)
 
     onUpdate((_props) => {
       props = _props
